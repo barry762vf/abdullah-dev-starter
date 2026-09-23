@@ -1,0 +1,35 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Node and frontend output
+node_modules/
+dist/
+.vite/
+coverage/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.local
+*.pem
+*.key
+
+# Editors and operating systems
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local database data
+pgdata/

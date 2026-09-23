@@ -1,0 +1,19 @@
+[project]
+name = "abdullah-dev-core-backend"
+version = "0.1.0"
+description = "FastAPI backend foundation for Abdullah Developer Core"
+requires-python = ">=3.11"
+
+# requirements.txt and requirements-dev.txt pin installable dependencies.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

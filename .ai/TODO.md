@@ -22,14 +22,14 @@
 ---
 
 ## ⚙️ Phase 1: Backend Foundation & Core Infrastructure
-- [ ] Scaffold `backend/` directory structure.
-- [ ] Create `backend/pyproject.toml` and `backend/requirements.txt`.
-- [ ] Implement `backend/app/core/config.py` using Pydantic Settings v2.
-- [ ] Implement `backend/app/core/logging.py` for structured JSON logging with request ID tracing.
-- [ ] Implement `backend/app/core/exceptions.py` with custom error hierarchy and Starlette handlers.
-- [ ] Implement `backend/app/api/v1/health.py` endpoint with uptime and DB status.
-- [ ] Implement `backend/app/main.py` assembling middleware, CORS, security headers, and router.
-- [ ] Write integration test for `/api/v1/health`.
+- [x] Scaffold `backend/` directory structure for the Phase 1 application and tests.
+- [x] Create `backend/pyproject.toml`, `backend/requirements.txt`, and `backend/requirements-dev.txt`.
+- [x] Implement `backend/app/core/config.py` using Pydantic Settings v2.
+- [x] Implement `backend/app/core/logging.py` for structured JSON logging with request ID tracing.
+- [x] Implement `backend/app/core/exceptions.py` with custom error hierarchy and Starlette handlers.
+- [x] Implement `backend/app/api/v1/health.py` endpoint with uptime and explicit `database: not_configured` status until Phase 2.
+- [x] Implement `backend/app/main.py` assembling middleware, CORS, security headers, and router.
+- [x] Write Settings unit and health/error API integration tests; verify live Uvicorn startup and `/docs`.
 
 ---
 

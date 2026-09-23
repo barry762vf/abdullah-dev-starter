@@ -1,6 +1,6 @@
 # Abdullah Developer Core
 
-A reusable foundation for bilingual web applications, with a FastAPI API, a React and TypeScript client, and PostgreSQL. The repository is being built in [roadmap phases](docs/DEVELOPMENT_ROADMAP.md). Phase 0 provides the local database and project configuration; the backend and frontend are planned for later phases.
+A reusable foundation for bilingual web applications, with a FastAPI API, a React and TypeScript client, and PostgreSQL. The repository is being built in [roadmap phases](docs/DEVELOPMENT_ROADMAP.md). Phases 0 and 1 provide the local database and FastAPI foundation; the frontend is planned for a later phase.
 
 ```text
 Browser (React, Vite, Arabic/English)
@@ -20,9 +20,9 @@ Docker with Compose is required for the local database. From the repository root
 
 1. Copy the template: `cp .env.example .env` (PowerShell: `Copy-Item .env.example .env`). The included credentials are for isolated local development only. Set new secrets before real use. Keep `POSTGRES_PASSWORD` and the password in `DATABASE_URL` identical.
 2. Start the database: `docker compose up -d --wait db` (or run `.\scripts\dev.ps1` in PowerShell / `bash scripts/dev.sh` on Linux or macOS). Compose binds PostgreSQL to `127.0.0.1:5432` and persists data in the `postgres_data` named volume.
-3. Once Phase 1 and Phase 4 are implemented, run the backend from `backend/` with `uvicorn app.main:app --reload` and the frontend from `frontend/` with `npm run dev`. Those directories do not exist in Phase 0.
+3. Set up Python 3.11+ in `backend/`, install `requirements-dev.txt`, then run `python -m uvicorn app.main:app --reload`. On Windows PowerShell: `py -3.11 -m venv backend/.venv`, `backend/.venv/Scripts/python.exe -m pip install -r backend/requirements-dev.txt`, then from `backend/` run `.venv/Scripts/python.exe -m uvicorn app.main:app --reload`. The frontend is planned for Phase 4.
 
-Check database status with `docker compose ps db`. Stop it with `docker compose down` (the named volume remains). The application itself is not runnable until later phases.
+Check database status with `docker compose ps db`. Stop it with `docker compose down` (the named volume remains). The Phase 1 API responds at `http://localhost:8000/api/v1/health`, with interactive docs at `http://localhost:8000/docs`. Health reports `database: not_configured` until the Phase 2 application database layer exists.
 
 ## Documentation
 

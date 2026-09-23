@@ -11,14 +11,14 @@
 
 | Metric | Status | Details |
 | :--- | :--- | :--- |
-| **Active Roadmap Phase** | **Phase 1 (Backend Foundation)** | Phase 0 is complete and verified against a live PostgreSQL 16 container. |
-| **Backend State** | Not Started | Architecture, schemas, and endpoints specified. |
+| **Active Roadmap Phase** | **Phase 1 complete; Phase 2 next** | Phase 0 and Phase 1 passed their completion gates. Phase 2 has not started. |
+| **Backend State** | Phase 1 foundation complete | FastAPI, validated settings, JSON request logs, problem responses, security/CORS middleware, and health endpoint are implemented. |
 | **Frontend State** | Not Started | Directory structure, styling, and bidi strategy specified. |
 | **Database State** | Local PostgreSQL verified | Docker Compose started PostgreSQL 16.15; container health, `pg_isready`, and a SQL query passed. Application database layer remains Phase 2. |
 | **Authentication** | Specified | Dual-token JWT (Argon2id + HTTP-only cookies) + RBAC designed. |
-| **Test Suite** | Not Started | Pytest + Vitest testing strategy specified. |
+| **Test Suite** | Phase 1 tests passing | 14 backend tests pass; Ruff lint and format checks pass. Frontend tests belong to later phases. |
 | **Documentation** | Foundation guide complete | Engineering guides are in `docs/`; root `README.md` and `LICENSE` are present. |
-| **Active Blockers** | None for Phase 0 | The Windows startup script now locates this Docker Desktop per-user installation; live verification passed. |
+| **Active Blockers** | None | Phase 1 health reports `database: not_configured` until the planned Phase 2 database layer. |
 
 ---
 
@@ -34,9 +34,11 @@
 - ✅ Initialized the local Git repository on `main` and moved the engineering guides into their specified `docs/` directory.
 - ✅ Validated PowerShell and Bash syntax, environment/Compose variable consistency, local Git ignore behavior, and both startup scripts' missing dependency messages.
 - ✅ Verified Phase 0 on a live Docker engine: Compose config, healthy database container, `pg_isready`, and a SQL connection to PostgreSQL 16.15 passed.
+- ✅ Preserved and pushed Phase 0 as `6b49d5c` on GitHub `main`, following the existing initial commit.
+- ✅ Implemented the Phase 1 FastAPI foundation and verified 14 pytest tests, Ruff lint/format, Uvicorn startup, live `/api/v1/health` and `/docs`, JSON request logs, and `pip check`.
 
 ---
 
 ## 3. Immediate Focus (Next Up)
 
-Implement **Phase 1 backend foundation** from `docs/DEVELOPMENT_ROADMAP.md`: configuration validation, structured request logging, centralized errors, FastAPI assembly, and an explicit health endpoint with tests. Database models, sessions, and migrations belong to Phase 2.
+The exact next task is **Phase 2 database layer** from `docs/DEVELOPMENT_ROADMAP.md`: async SQLAlchemy sessions, ORM models, Alembic migrations, and their integration tests. Do not treat Phase 1 health as a database readiness probe before that work is implemented.

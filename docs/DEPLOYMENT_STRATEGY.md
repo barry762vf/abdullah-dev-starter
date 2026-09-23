@@ -93,7 +93,7 @@ The repository provides two separate, highly optimized GitHub Actions workflows:
 ## 5. Zero-Downtime Deployment & Health Monitoring
 
 - **Health Endpoint (`/api/v1/health`):**
-  Returns JSON status:
+  Returns JSON status after the Phase 2 database layer is integrated. During Phase 1, it explicitly returns `database: "not_configured"` and does not claim to check database connectivity:
   ```json
   {
     "status": "healthy",

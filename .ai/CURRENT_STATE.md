@@ -1,30 +1,29 @@
-# Current repository state — Abdullah Developer Kit
+# Abdullah Developer Kit v1.0.0 — stable reusable baseline
 
-> Updated: 2026-09-24 · Roadmap implementation: **Phases 0–8 complete** · Active work: **v1.0.0 release candidate**
+> Updated: 2026-09-24 · Phases 0–8 complete · v1 architecture frozen
 
-## Shipped foundation
+## Frozen v1 foundation
 
-- FastAPI, validated settings, JSON request logging, RFC 7807 errors, process liveness and PostgreSQL readiness.
-- PostgreSQL 16 with async SQLAlchemy models, Alembic revisions 001/002, guarded test database and explicit role/admin seed.
-- Argon2id authentication, 15-minute access JWTs, rotating 14-day opaque refresh tokens, current database RBAC and audited admin operations.
-- React/TypeScript static SPA with English LTR/Arabic RTL, dashboard, admin user/stats/audit screens and same-origin cookie client.
-- Nginx/Compose production stack, Cloudflare Pages proxy option, CI, and disabled-by-default Gemini/Telegram/Supabase Storage/SMTP reference slots.
+- FastAPI backend with validated settings, structured request logs, centralized problem responses, liveness and database readiness.
+- PostgreSQL / SQLAlchemy async / Alembic, UUID models, reversible migrations, explicit role seed and guarded test database.
+- Argon2id authentication, short-lived access JWTs, rotating opaque refresh tokens, database-backed RBAC, administration and audit logs.
+- React / Vite / TypeScript SPA, Arabic/English strings, RTL/LTR direction switching, dashboard and admin UI.
+- Pytest/Vitest suites, Ruff/TypeScript/ESLint/build checks, GitHub Actions, hardened Docker Compose production stack, and authenticated same-origin Nginx/Cloudflare proxy topologies.
+- Disabled-by-default Gemini, Telegram, Supabase Storage and SMTP extension slots; `.ai/` multi-agent workflow.
 
-## Release-candidate verification
+The v1 architecture is the stable reusable starter baseline. Bug fixes use patch releases, backward-compatible reusable improvements use minor releases, and breaking architecture changes use major releases. Product-specific functionality belongs in cloned projects.
 
-- Backend: 91 unit tests, 136 total against dedicated PostgreSQL, 95% coverage; Ruff lint/format and pip check passed. Alembic drift passed against the guarded test database. The standalone check against the unmigrated development database reported “Target database is not up to date”; development data was not modified.
-- Frontend: 54 Vitest tests, 97.91% statements/lines and 90.51% branches; TypeScript, ESLint and production build passed.
-- Dependency audit: full npm audit reports 8 accepted findings (5 moderate, 1 high, 2 critical) under BUG-013/ADR 014; production audit reports 2 moderate, exits 0 at the high gate. Python dependency integrity passed; no Python vulnerability scanner is configured.
-- Docker CLI is unavailable in this task environment. GitHub workflows for release commit `14598e9` passed: [backend-ci](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35978155712) ran 136 tests at 95% coverage, [frontend-ci](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35978155774) passed, and [containers](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35978155862) built healthy services and passed `scripts/smoke-prod.sh`.
-- Read-only release security review found no confirmed high/critical application defect. No paid-provider calls were made.
+## Release verification
 
-## Release preparation
+- Backend: 136 tests against dedicated PostgreSQL, 95% coverage; 91 unit-only tests; Ruff lint/format, pip check, and guarded Alembic drift passed.
+- Frontend: 54 tests, 97.91% statements/lines and 90.51% branches; typecheck, lint, build and npm clean-install dry run passed.
+- GitHub CI for code commit `14598e9`: backend, frontend and containers workflows all succeeded. The container workflow built the stack, reached healthy services and passed `scripts/smoke-prod.sh`.
+- Full npm audit remains an accepted BUG-013 risk (8 findings: 5 moderate, 1 high, 2 critical); production high-severity gate passes with two moderate findings. `pip check` passed; no Python vulnerability scanner is configured.
+- No confirmed high/critical application defect was found. No paid provider calls were made. Docker CLI was unavailable locally; container behavior was verified in GitHub Actions.
+- The development database is below Alembic head; do not point integration tests there. The dedicated test database passed migration and drift checks.
 
-The README, architecture/security/auth/database guides, customization guide and release notes now describe the shipped kit. Tracked absolute machine paths and private profile details were removed from the current tree while `.ai/` remains. Earlier Git history can still contain those strings; it was not rewritten. GitHub currently reports the repository as **PRIVATE**, default branch `main`, and template mode off. Backend/frontend metadata is `1.0.0`; the eventual `v1.0.0` Git tag is the canonical release identifier. No tag has been created yet.
+## Repository and release
 
-## Remaining work
+GitHub repository is **public** and **template-enabled**. The current tree has no tracked environment secrets, generated output or personal absolute paths. Earlier public Git history may still contain removed personal context; history was not rewritten. Cloudflare/Railway live checks, WAF settings and optional provider calls are deployment-specific.
 
-1. Release-preparation code commit `14598e9` and all triggered workflows are green. Review release notes, then create/publish annotated `v1.0.0` when the owner chooses to release.
-2. For each real deployment, complete the Cloudflare/Railway or chosen-host smoke, TLS, proxy-IP and edge rate-limit checks in `docs/DEPLOYMENT_STRATEGY.md`.
-3. Enable optional providers only with project credentials, quotas, data policy and live tests; install a durable Telegram handler first.
-4. Reassess BUG-013 and older direct pins as a planned dependency update, without an untested major upgrade in this release.
+Package metadata is `1.0.0`. The annotated `v1.0.0` tag is the canonical release identifier. The release-preparation code commit and CI are verified; create the tag and GitHub release as the final publication step.

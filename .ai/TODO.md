@@ -1,182 +1,29 @@
-# 📋 .ai/TODO.md — Master Task Backlog
+# Abdullah Developer Kit — v1.0.0 backlog
 
-> **Document:** `.ai/TODO.md`  
-> **Status:** Active Backlog  
-> **Platform:** Abdullah Developer Core (`abdullah-dev-core`)
+> State: **Stable reusable baseline** · Phases 0–8 complete · No new phase is planned.
 
----
+## Completed for v1.0.0
 
-## 🚀 Phase 0: Repository Foundation & Scaffolding
-- [x] Analyze requirements and inspect engineer's Obsidian Second Brain context.
-- [x] Complete comprehensive architectural documentation suite (engineering guides in `docs/`, bridge in root `AI_CONTEXT.md`).
-- [x] Establish `.ai/` collaboration memory system (`PROJECT_CONTEXT.md`, `CURRENT_STATE.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `TODO.md`, `BUGS.md`, `AGENT_HANDOFF.md`, `CHANGELOG_AI.md`).
-- [x] Initialize local Git repository and create root `.gitignore` (Python, Node, Docker, environment exclusions).
-- [x] Create root `.dockerignore`.
-- [x] Create master `.env.example` with documented environment configurations.
-- [x] Create root `docker-compose.yml` defining PostgreSQL 16 service.
-- [x] Create developer automation scripts (`scripts/dev.ps1`, `scripts/dev.sh`).
-- [x] Initialize `README.md` with quickstart guide and architecture overview; add `LICENSE`.
-- [x] Place the engineering guides in the specified `docs/` directory.
-- [x] Verify Compose configuration and healthy PostgreSQL startup on a live Docker host (`docker compose config`, `docker compose up -d --wait db`, `docker compose ps db`, `docker compose exec db pg_isready -U postgres -d abdullah_core_dev`, and a SQL query confirming PostgreSQL 16.15).
+- [x] Repository, backend, PostgreSQL/Alembic, auth/refresh, RBAC, administration, bilingual RTL/LTR frontend and typed optional provider slots.
+- [x] Backend/frontend test suites, CI, hardened Docker deployment and same-origin proxy architecture.
+- [x] Clone setup, customization, security and deployment documentation; public template hygiene review.
+- [x] Release audit: 136 backend tests (95% coverage), 54 frontend tests, local checks and all GitHub workflows green for release code commit `14598e9`.
+- [x] Freeze the current architecture as the reusable v1 baseline and document semver policy.
+- [x] GitHub repository is public and template mode is enabled.
+- [ ] Create and publish the annotated `v1.0.0` tag and GitHub release.
 
----
+## Future version improvement
 
-## ⚙️ Phase 1: Backend Foundation & Core Infrastructure
-- [x] Scaffold `backend/` directory structure for the Phase 1 application and tests.
-- [x] Create `backend/pyproject.toml`, `backend/requirements.txt`, and `backend/requirements-dev.txt`.
-- [x] Implement `backend/app/core/config.py` using Pydantic Settings v2.
-- [x] Implement `backend/app/core/logging.py` for structured JSON logging with request ID tracing.
-- [x] Implement `backend/app/core/exceptions.py` with custom error hierarchy and Starlette handlers.
-- [x] Implement `backend/app/api/v1/health.py` endpoint with uptime and explicit `database: not_configured` status until Phase 2.
-- [x] Implement `backend/app/main.py` assembling middleware, CORS, security headers, and router.
-- [x] Write Settings unit and health/error API integration tests; verify live Uvicorn startup and `/docs`.
+- Reassess accepted npm advisories (BUG-013) and older pinned backend dependencies in a reviewed, tested maintenance update.
+- Add seed CLI branch tests, refused-admin-attempt audit events, or schema metadata improvements only when a concrete reusable requirement justifies them.
+- Consider broader optional integrations or framework improvements through the minor/major release policy in ADR 016; do not add product-specific functionality to the starter.
 
----
+## Deployment-specific
 
-## 🗄️ Phase 2: Database Layer & Declarative Models
-- [x] Implement `backend/app/core/database.py` with async SQLAlchemy 2.0 engine, sessionmaker, and request-scoped dependency.
-- [x] Implement `backend/app/models/base.py` with database-generated UUID PK and timezone-aware timestamp mixins.
-- [x] Implement `backend/app/models/user.py` (`User`, `Role`, `UserRole`).
-- [x] Implement `backend/app/models/token.py` (`RefreshToken` hash storage).
-- [x] Implement `backend/app/models/audit.py` (`AuditLog`).
-- [x] Initialize Alembic with async migration support in `backend/alembic/`.
-- [x] Create reversible initial migration revision (`001_initial_schema.py`) and verify upgrade/downgrade/re-upgrade on PostgreSQL.
-- [x] Implement explicit idempotent baseline role seeder (`backend/app/core/seed.py`).
-- [x] Verify async connectivity, model defaults/constraints/cascades, schema drift, readiness, test DB isolation, and all Phase 1 regressions.
+- For each deployment, verify TLS, same-origin cookies, direct API bypass refusal, audit client IP, rate limits/WAF and backups on the chosen hosts.
+- Configure provider credentials, quotas, egress controls and real service tests only when enabling an integration. Install a durable Telegram update handler before configuring the webhook.
 
-## 🔧 Pre-Phase-3 Foundation Hardening
-- [x] Independently verify every §3 finding in `.ai/REVIEW_CLAUDE.md` against code and the dedicated test database.
-- [x] Fix ORM user deletion with loaded role assignments and refresh tokens; add `session.delete()`/commit regression coverage.
-- [x] Add Alembic `002_pre_auth_hardening` for unique `lower(email)`, restricted role deletion, and nullable token `revoked_at`.
-- [x] Hide bound SQL parameters and sanitize database exception logs, including PostgreSQL constraint details.
-- [x] Change the migration test to exercise `base → head → base → head` and run Alembic drift check.
-- [x] Apply staging security guards and explicit async relationship loading; test each behavior.
-- [x] Record Phase 3 authorization and refresh-token decisions in ADR 009 and `docs/AUTH_STRATEGY.md`.
+## Project-specific in cloned repositories
 
----
-
-## 🔐 Phase 3: Authentication & Role-Based Authorization (RBAC)
-- [x] Add secure initial superadmin provisioning to the Phase 2 seed command using Argon2id and configured credentials; never reset an existing admin password.
-- [x] Implement `backend/app/core/security.py` (Argon2id password hashing and JWT encoding/decoding).
-- [x] Create Pydantic v2 auth and user schemas (`backend/app/schemas/auth.py`, `backend/app/schemas/user.py`).
-- [x] Implement `backend/app/services/auth_service.py` (login, register, token rotation, revocation).
-- [x] Implement `backend/app/services/user_service.py` (profile retrieval, user updates).
-- [x] Implement FastAPI authentication dependencies (`backend/app/api/deps.py`: import existing `get_db` from `app.core.database`; add `get_current_user`, `get_current_active_user`, `require_role`).
-- [x] Load current `is_active` and role membership from PostgreSQL on protected requests; use atomic refresh rotation and known-reuse handling from ADR 009.
-- [x] Make registration fail clearly if baseline `user` role is absent; ensure seed command runs in auth integration tests and deployment bootstrap.
-- [x] Revisit the permanent `INITIAL_ADMIN_PASSWORD` startup requirement during secure administrator bootstrap.
-- [x] Use only the ASGI resolved peer IP for Phase 3 auth limits/audit and document trusted-proxy deployment requirements.
-- [x] Implement API endpoints (`/api/v1/auth/register`, `/login`, `/refresh`, `/logout`).
-- [x] Implement `/api/v1/users/me` profile endpoints.
-- [x] Write pytest integration suite verifying auth, token rotation, and RBAC guards.
-
----
-
-## 🔍 Phase 3 Security Review Follow-ups (`.ai/REVIEW_PHASE3_AUTH_CLAUDE.md`)
-Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's independent classifications and dispositions are recorded in `.ai/REVIEW_PHASE3_AUTH_CODEX.md`; Claude's original report is preserved.
-
-**Before browser auth integration (Phase 4):**
-- [x] HIGH-01: Verify the concurrent-refresh behavior and define the Web Locks/BroadcastChannel browser contract in `docs/AUTH_STRATEGY.md`, preserving ADR 009's strict reuse rule.
-- [x] HIGH-02: Choose the same-origin `/api/*` proxy topology in ADR 011 and deployment/auth docs; resolve BUG-008 at the architecture level.
-
-**Before any public deployment:**
-- [x] MEDIUM-01: Offload Argon2 hashing/verification for registration, login and bootstrap to a bounded AnyIO worker pool; retain the dummy-hash path.
-- [x] MEDIUM-02 checkpoint: Confirm Uvicorn default forwarding behavior, pin `--no-proxy-headers` for local direct startup, and document exact production proxy requirements. Live ingress configuration remains Phase 7.
-- [x] MEDIUM-03 deployment extension (Phase 7): shared per-IP limits at the proxy/edge (Nginx `limit_req` / Cloudflare WAF rules) plus a PostgreSQL per-account login throttle shared by all workers; the in-process limiter remains local defence in depth.
-- [x] MEDIUM-04: Require explicit `ENVIRONMENT` and test missing-mode startup failure.
-
-**Test hardening:**
-- [x] Verify login/register reject `text/plain` and form bodies with 422.
-- [x] (Phase 6) Add remaining regression tests in the relevant phase: JWT `alg:none`/HS512/missing claims/non-UUID `sub`/deleted user; ignored `roles` claim; cookie `Path`/`Max-Age`/`Secure`; bootstrap advisory-lock race; disabled user at refresh revokes all sessions; route inventory (all non-public routes use `get_current_active_user`); failure after the conditional UPDATE leaves the old token valid; log redaction on reuse/bootstrap paths; a barrier-based true refresh race.
-
-**Low-priority hardening:**
-- [x] LOW-01 documentation: Access JWTs remain valid ≤15 min after logout/reuse; Phase 4 clears client caches. Consider `users.sessions_invalid_before` with password reset later.
-- [ ] LOW-02/03 operations: Bootstrap-before-registration is documented; printing created/skipped outcome and disabled-admin recovery remain.
-- [ ] LOW-04: Make `get_current_user` private or clearly documented as not checking `is_active`.
-- [ ] LOW-05: Add fixed audit `reason` codes, audit refresh denial for inactive accounts, strip control characters from stored user agents.
-- [x] LOW-06: Use `ACCESS_TOKEN_MINUTES`/`REFRESH_TOKEN_DAYS` constants for JWT/database expiry and cookies.
-- [ ] LOW-07: Consider `check_needs_rehash` on login and NFKC password normalization (before real users exist).
-- [x] LOW-08/10/11: Test JSON-only auth requests and document registration's 409 account enumeration and cookie-only refresh for non-browser clients.
-- [x] LOW-09 architecture: Choose same-origin host-only cookies in ADR 011; same-site subdomain overrides must address sibling-subdomain cookie behavior.
-
----
-
-## 🎨 Phase 4: Frontend Shell, Modern UI & Bilingual Engine (RTL / LTR)
-- [x] Choose one-origin SPA/API topology in ADR 011 before wiring browser cookie auth (BUG-008 resolved at architecture level).
-- [x] Implement the `docs/AUTH_STRATEGY.md` browser refresh contract: in-tab single-flight, Web Lock across tabs, `/users/me` probe, non-secret BroadcastChannel signals, no refresh retry after ambiguous failure, and logout cache clearing.
-- [x] Use a relative `/api/v1` client URL and Vite `/api/*` development proxy; verify the local route against a live FastAPI health endpoint.
-- [x] Implement and test the production same-origin `/api/*` route: Nginx `web` image (run and smoke-tested) and Cloudflare Pages Function (unit-tested). Live Cloudflare smoke stays a per-deployment step (DEPLOYMENT_STRATEGY §8).
-- [x] Scaffold `frontend/` with React 18, Vite 5, and TypeScript.
-- [x] Configure Tailwind CSS logical properties and Cairo + Inter fonts with system fallbacks.
-- [x] Set up `i18next` with Arabic (`locales/ar/translation.json`) and English (`locales/en/translation.json`).
-- [x] Implement `useDirection` updating root `lang` and `dir`, with language preference persistence.
-- [x] Configure relative Axios API client, credentials, RFC 7807 errors, and strict refresh coordination (`src/lib/api.ts`).
-- [x] Configure TanStack Query client (`src/lib/queryClient.ts`).
-- [x] Build responsive layout shell (`AppShell`, `Navbar`, `Sidebar`, `LanguageToggle`, `ThemeToggle`) and loading/error/empty/not-found primitives.
-- [x] Build responsive `LoginPage` and `RegisterPage` with form validation and actual Phase 3 auth routes.
-- [x] Implement `AuthGuard` protecting the generic dashboard placeholder; backend remains authorization authority.
-- [x] Verify mobile, tablet, and desktop English LTR and Arabic RTL layouts in a browser; fix the narrow-header wrap.
-- [x] Pass frontend tests, TypeScript check, lint, build, and local API proxy smoke test.
-- [x] Takeover verification (Claude): emit login/logout signals inside the Web Lock, bound auth request time, apply saved direction before first paint, make the mobile drawer an accessible modal dialog, fix the language-toggle accessible name, mirror directional icons in RTL, and verify the proxied register→login→refresh→logout lifecycle live.
-
----
-
-## 🛡️ Phase 5: Admin Dashboard & User Management
-- [x] Implement backend admin endpoints (`/api/v1/admin/users`, `PATCH /users/{id}`, `/stats`, `/audit-logs`) with ADR 013 authorization, advisory-lock invariant, audit rows and tests.
-- [x] Implement frontend `RoleGuard` restricting `/admin` to authorized roles (UX only).
-- [x] Build admin dashboard overview with KPI metric cards.
-- [x] Build user management data table (debounced search, role filter, pagination, superadmin role change, status toggle with confirmation).
-- [x] Build audit log viewer with action filter and text-only details dialog.
-- [x] Role filter uses `EXISTS` on the `user_roles` primary key (leading `user_id`); no extra `role_id` index needed yet. No hard-delete flow was added, so audit attribution is unchanged.
-- [ ] Optional later: audit refused (403) admin attempts; add a user-detail view or bulk actions only if a project needs them.
-
----
-
-## 🧪 Phase 6: Automated Testing Suite
-- [x] Finalize backend pytest suite covering edge cases and security boundaries (99 tests; JWT forgery, cookies, route inventory, rollback, proven concurrency races, log redaction, CORS/headers, admin regressions).
-- [x] Implement Vitest tests for language switching, forms, guards, cross-tab sign-out, logout, admin states and dialog focus (45 tests).
-- [x] Set up coverage reporting (pytest-cov with greenlet tracing; @vitest/coverage-v8); reported, not enforced.
-- [x] Add folder-based `unit`/`integration` markers, explicit `python-dotenv` and `pytest-cov` dev pins, `get_db` rollback/connection-release, CORS preflight and security-header tests, and a unit-tested `_test` database guard.
-- [ ] Optional: tests for the seed CLI entry point and race-only `IntegrityError` branches (bootstrap, registration) if those paths change.
-
----
-
-## 🚢 Phase 7: Production Containerization & CI/CD
-- [x] Trusted client IP (BUG-009): `CLIENT_IP_SOURCE=edge_header` with an authenticated proxy header; Uvicorn `--no-proxy-headers`; forwarding headers stripped; bypass refused (403). Shared auth limiting (BUG-010): edge + PostgreSQL account throttle.
-- [x] Proxy preserves method, path, body, status, every `Set-Cookie`, forces `no-store`, and records the real client IP (verified live through Nginx: audit IP = observed peer, spoofed headers ignored).
-- [x] Production refuses to start without strong secret, secure cookies, HTTPS origins, debug off, explicit client-IP source, and with a leftover bootstrap password; `app.preflight` fails the container fast.
-- [x] BUG-013 reviewed: all packages are at the latest release of their major; fixes require majors. Production Router advisories do not apply (fixed/allowlisted navigation, no SSR); dev-tool advisories accepted with scope (ADR 014). CI gates `npm audit --omit=dev --audit-level=high`.
-- [x] Write multi-stage, non-root `backend/Dockerfile` (uid 10001, preflight, health check).
-- [x] Write multi-stage Nginx `frontend/Dockerfile` (nginx-unprivileged uid 101, SPA + `/api/*` proxy).
-- [x] Configure GitHub Actions workflow `backend-ci.yml`.
-- [x] Configure GitHub Actions workflows `frontend-ci.yml` and `containers.yml` (production stack smoke test).
-- [x] Create `docker-compose.prod.yml` (migrate release job, internal network, read-only hardened containers) and `scripts/build.ps1`, `scripts/smoke-prod.sh`.
-- [x] Transaction-pooler mode, configurable pool limits, docs hidden outside development, 3 s readiness bound, `ENV_FILE` container behavior.
-- [x] Add `backend/.dockerignore` and `frontend/.dockerignore`.
-- [x] Sanitize public-template context and local paths while preserving the `.ai/` collaboration workflow for v1.0.
-- [ ] Operational, per deployment: run the DEPLOYMENT_STRATEGY §8 live checks on the real Cloudflare Pages + Railway (or chosen) hosts, and add Cloudflare WAF rate-limit rules.
-- [ ] Decide whether a separate audit-log database role or metadata naming convention is needed when schema/deployment complexity justifies it.
-
----
-
-## 🔌 Phase 8: Reusable Extension Slots (Pluggable Modules)
-- [x] Define typed protocols and inert Null fallbacks (`backend/app/integrations/base.py`).
-- [x] Implement Gemini AI REST adapter and superadmin-only reference generation endpoint.
-- [x] Implement Telegram Bot send adapter and secret-validated webhook that refuses 2xx until a durable handler is installed.
-- [x] Implement Supabase Storage server-side upload adapter; no generic public upload route.
-- [x] Implement authenticated SMTP notification adapter off the event loop.
-- [x] Validate provider selection and required settings; test Null and enabled paths with mocked services.
-- [x] Provide deliberate API egress in production Compose, production/dev environment templates and integration guidance.
-- [ ] Per deployment: configure real provider credentials, quotas, outbound firewall rules and a durable Telegram handler before enabling those services.
-
----
-
-## v1.0.0 release candidate (no new roadmap phase)
-- [x] Audit current architecture, auth/admin/proxy/integration security and public-template hygiene.
-- [x] Align package metadata to 1.0.0; document Git tag as canonical release version.
-- [x] Refresh README and engineering guides, add customization guide and release notes.
-- [x] Run backend/frontend suites, lint/format/type/build, dependency audits and guarded Alembic drift check.
-- [x] Confirm release-preparation commit `14598e9` and backend/frontend/containers GitHub workflows green for its SHA.
-- [ ] Create and publish annotated `v1.0.0` only after the release checks pass.
-- [ ] Optional owner action: enable GitHub **Settings → General → Template repository**.
-- [ ] Project-specific deployment: verify live host cookies, proxy bypass, audit IP, TLS/WAF and any enabled providers.
+- Add business data models, routes, workflows, roles, authorization policy, branding and privacy/data-retention rules for the product being built.
+- Decide whether to expose registration, add recovery flows, or customize the dashboard. Keep these changes in the clone rather than the reusable v1 foundation.

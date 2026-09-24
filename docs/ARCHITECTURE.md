@@ -1,4 +1,6 @@
-# Current architecture
+# Abdullah Developer Kit v1 stable architecture
+
+> **Status:** Frozen v1.0.0 baseline. Changes follow the versioning policy in `.ai/DECISIONS.md` ADR 016. Product-specific models, workflows and screens belong in cloned applications.
 
 Abdullah Developer Kit is a static React SPA and a FastAPI REST API backed by PostgreSQL. The browser uses one origin: Vite proxies `/api/*` locally, and either the bundled Nginx image or a Cloudflare Pages Function proxies it in production. The API is the authorization boundary. See [deployment](DEPLOYMENT_STRATEGY.md) and accepted ADRs in `.ai/DECISIONS.md`.
 
@@ -20,5 +22,7 @@ Requests get a correlation ID, JSON request log, explicit security headers, RFC 
 ## Frontend
 
 `frontend/src/routes/AppRoutes.tsx` defines public home/login/register, authenticated dashboard, and `/admin` overview/users/audit pages. `AuthGuard` and `RoleGuard` improve UX; the backend enforces access. `src/lib/api.ts` uses relative `/api/v1`, HttpOnly cookies, Web Locks for cross-tab refresh ordering, and RFC 7807 error handling. `src/lib/i18n.ts`, locale JSON, and `useDirection` switch Arabic RTL and English LTR at the document root. `src/stores/uiStore.ts` persists only UI preferences.
+
+The v1 baseline includes the FastAPI backend; PostgreSQL, SQLAlchemy and Alembic; authentication with refresh-token rotation; database-backed RBAC and administration; React/Vite/TypeScript; Arabic/English RTL/LTR; automated tests; Docker; GitHub Actions; the authenticated production proxy architecture; optional integration slots; and the multi-agent `.ai/` handoff system. This list defines the reusable foundation, not a product feature backlog.
 
 See [folder structure](FOLDER_STRUCTURE.md) for a repository map and [authentication](AUTH_STRATEGY.md) for the session contract.

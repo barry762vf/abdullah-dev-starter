@@ -1,9 +1,9 @@
-# Abdullah Developer Kit — durable handoff
+# Abdullah Developer Kit — v1.0.0 durable handoff
 
-The foundation roadmap is complete through Phase 8. The v1.0.0 release candidate combines a FastAPI/PostgreSQL backend, React bilingual SPA, database-backed auth and administration, guarded migrations, CI, a production container topology and disabled-by-default integration slots.
+The roadmap is complete through Phase 8. **Abdullah Developer Kit v1.0.0 is the stable reusable baseline.** Its frozen foundation includes FastAPI; PostgreSQL, SQLAlchemy and Alembic; authentication with refresh-token rotation; database-backed RBAC and administration; a React/Vite/TypeScript client; Arabic/English RTL/LTR; regression tests; Docker and CI; same-origin proxy deployment; optional integration slots; and the `.ai/` multi-agent handoff system.
 
-The durable architecture is one browser-facing origin for SPA and `/api/*`, with an authenticated proxy conveying the observed client IP. Roles come from the current database, refresh tokens rotate once, and the first administrator is bootstrapped explicitly. Optional Gemini, Telegram, Supabase Storage and SMTP adapters require project credentials and policies; the core starts without them.
+Keep this starter generic. Product-specific schemas, workflows, roles and screens belong in cloned repositories. Optional Gemini, Telegram, Supabase Storage and SMTP adapters are disabled by default and require project credentials, policy and live verification.
 
-Release preparation removed machine-specific and private profile context from the current public template while preserving `.ai/` engineering handoffs. The Git tag is the canonical release version. Historical commits were not rewritten and may retain early context. The first live Cloudflare/Railway deployment, WAF configuration and provider calls remain project-specific verification. BUG-013 records accepted dependency advisory scope pending a planned upgrade.
+Version policy: bug fixes use patch releases (`1.0.x`); backward-compatible reusable improvements use minor releases (`1.x.0`); breaking architecture changes use major releases (`2.0.0`). The annotated Git tag is the canonical release identifier.
 
-Next direction: confirm the release-preparation CI, publish `v1.0.0` when green, then use the deployment runbook for each chosen host. Keep day-to-day commands and exact test evidence in `.ai/AGENT_HANDOFF.md`.
+The test and CI gates passed for the release code commit. GitHub is public and template-enabled. The first live deployment, WAF setup and enabled-provider calls remain per-project work. Earlier public Git history may retain removed personal context; the history was not rewritten. Detailed verification is recorded in `.ai/AGENT_HANDOFF.md`.

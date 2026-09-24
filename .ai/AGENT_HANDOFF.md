@@ -1,23 +1,18 @@
-# Agent handoff — v1.0.0 release candidate
+# Agent handoff — Abdullah Developer Kit v1.0.0
 
-> Date: 2026-09-24 · Phases 0–8 complete · No Phase 9 · Release tag not yet created
+> State: stable reusable baseline · Phases 0–8 complete · architecture frozen
 
-## Audit and implementation
+## Release verification
 
-The release audit found significant public-template documentation drift and tracked machine/personal context; no confirmed high/critical defect in the assembled application. Updated README and current architecture, auth, database, security, technology, vision and folder guides; added `docs/CUSTOMIZATION.md` and `docs/RELEASE_NOTES_v1.0.0.md`; sanitized `AI_CONTEXT.md`, `.ai/PROJECT_CONTEXT.md`, historical tracked path mentions and agent workflow guidance. Kept `.ai/` collaboration records. Aligned `backend/pyproject.toml`, `frontend/package.json` and lockfile to 1.0.0. The Git tag is the canonical release version (ADR 016). Earlier public Git history is unchanged and may retain old personal path strings.
+- `main` is clean and tracks `origin/main`; release-preparation code commit `14598e9` passed all three GitHub workflows: [backend-ci](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35978155712) (136 tests, 95% coverage, migration drift), [frontend-ci](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35978155774), and [containers](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35978155862) (healthy production stack, smoke script).
+- Local backend: 91 unit tests, 136 full PostgreSQL tests at 95%, Ruff lint/format, pip check and guarded Alembic drift passed. Frontend: 54 tests, 97.91% line/statement and 90.51% branch coverage, typecheck, ESLint and production build passed. `npm ci --dry-run` passed.
+- No confirmed high/critical application issue remains. Known accepted risks: npm BUG-013 (8 full-tree advisories; 2 moderate in production dependencies), old backend direct pins/no Python vulnerability scanner, and historic personal context in earlier public commits. No credentials were found in the current tree.
+- GitHub is public with template mode enabled. Optional providers and Cloudflare/Railway live behavior remain deployment-specific. The security scan plugin did not start its Python helper; manual security review and repository tests were used.
 
-## Verified results
+## Frozen architecture and version policy
 
-- Backend: `.venv/Scripts/python.exe -m pytest -m unit -q` → **91 passed, 45 deselected**. Full `pytest -q --cov --cov-report=term` → **136 passed, 95% coverage** against the dedicated PostgreSQL test database. Ruff check and format, `pip check` passed. `alembic check` passed against `TEST_DATABASE_URL`; direct check against the unmigrated development URL correctly failed, and development data was untouched.
-- Frontend: `npm run test:coverage` → **54 passed**, 97.91% statements/lines and 90.51% branches. `npm run typecheck`, `npm run lint`, `npm run build` passed.
-- Dependencies: `npm audit --json` → exit 1, 8 findings (5 moderate, 1 high, 2 critical); `npm audit --omit=dev --audit-level=high` → exit 0, 2 moderate React Router findings. BUG-013's scope still matches the shipped SPA and local-only development servers. Backend `pip check` passed; no Python vulnerability scanner is configured.
-- Production/CI: Docker CLI absent locally. Release code commit `14598e9` passed [backend-ci](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35978155712) (136 tests, 95% coverage, drift), [frontend-ci](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35978155774) (fresh npm install, checks and production audit gate), and [containers](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35978155862) (healthy production services and `scripts/smoke-prod.sh`).
-- Security/optional integrations: code review covered auth, RBAC/admin, refresh, CSRF, client-IP proxy, audit rendering, migration, settings, containers and provider routes. Providers default to Null; Gemini is superadmin-only; Telegram rejects unhandled updates; Storage and SMTP have no public routes. No live paid API calls.
-
-## Git and risks
-
-`main` tracks `origin/main` at `https://github.com/barry762vf/abdullah-dev-starter.git`. Release code commit `14598e9` was pushed normally and all three workflows passed. This final CI-record update is documentation only; verify its own commit SHA after push. GitHub reports visibility **PRIVATE** and `isTemplate=false`. No tag or release has been published. Host-specific Cloudflare/Railway smoke, WAF rules and optional-provider testing remain deployment tasks. Docker could not run locally in this task environment. The security-scan plugin could not start its bundled Python 3 helper; this audit used manual source review and the project suites instead.
+v1 freezes FastAPI, PostgreSQL/SQLAlchemy/Alembic, auth/refresh rotation, RBAC, administration, React/Vite/TypeScript, Arabic/English RTL/LTR, tests, Docker/CI, same-origin production proxies, optional provider slots and `.ai/` handoffs. Bug fixes are patch releases (`1.0.x`); compatible reusable improvements are minor releases (`1.x.0`); breaking architecture changes are major releases (`2.0.0`). Product-specific features belong in clones. See `.ai/DECISIONS.md` ADR 016 and `docs/ARCHITECTURE.md`.
 
 ## Exact next action
 
-Review the release notes, then create and push annotated `v1.0.0` and publish a GitHub release. Enable **Settings → General → Template repository** if the owner wants GitHub template cloning; change visibility separately if public access is intended. Do not start another roadmap phase.
+Create and push annotated tag `v1.0.0` on the final release-preparation commit, then publish a GitHub release using `docs/RELEASE_NOTES_v1.0.0.md`. For a new product, use GitHub **Use this template**, clone the new repository, follow the root README quickstart, and customize it using `docs/CUSTOMIZATION.md`. Do not start another implementation phase.

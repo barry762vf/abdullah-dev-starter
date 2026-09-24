@@ -103,17 +103,21 @@ Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's in
 
 ## 🎨 Phase 4: Frontend Shell, Modern UI & Bilingual Engine (RTL / LTR)
 - [x] Choose one-origin SPA/API topology in ADR 011 before wiring browser cookie auth (BUG-008 resolved at architecture level).
-- [ ] Implement the `docs/AUTH_STRATEGY.md` browser refresh contract: in-tab single-flight, Web Lock across tabs, `/users/me` probe, non-secret BroadcastChannel signals, no refresh retry after ambiguous failure, and logout cache clearing.
-- [ ] Use a relative `/api/v1` client URL and Vite `/api/*` development proxy; plan and test the production same-origin edge route before deployment.
-- [ ] Scaffold `frontend/` with React, Vite, and TypeScript.
-- [ ] Configure Tailwind CSS with RTL logical properties and Cairo + Inter fonts.
-- [ ] Set up `i18next` with Arabic (`locales/ar/translation.json`) and English (`locales/en/translation.json`).
-- [ ] Implement `useDirection` hook dynamically switching `dir="rtl"` / `dir="ltr"`.
-- [ ] Configure Axios API client with interceptors for credentials and error handling (`src/lib/api.ts`).
-- [ ] Configure TanStack Query client (`src/lib/queryClient.ts`).
-- [ ] Build layout shell (`AppShell`, `Navbar`, `Sidebar`, `LanguageToggle`, `ThemeToggle`).
-- [ ] Build responsive `LoginPage` and `RegisterPage` with form validation.
-- [ ] Implement `AuthGuard` protecting dashboard routes.
+- [x] Implement the `docs/AUTH_STRATEGY.md` browser refresh contract: in-tab single-flight, Web Lock across tabs, `/users/me` probe, non-secret BroadcastChannel signals, no refresh retry after ambiguous failure, and logout cache clearing.
+- [x] Use a relative `/api/v1` client URL and Vite `/api/*` development proxy; verify the local route against a live FastAPI health endpoint.
+- [ ] Implement and test the production same-origin Pages `/api/*` edge route before deployment (Phase 7 gate).
+- [x] Scaffold `frontend/` with React 18, Vite 5, and TypeScript.
+- [x] Configure Tailwind CSS logical properties and Cairo + Inter fonts with system fallbacks.
+- [x] Set up `i18next` with Arabic (`locales/ar/translation.json`) and English (`locales/en/translation.json`).
+- [x] Implement `useDirection` updating root `lang` and `dir`, with language preference persistence.
+- [x] Configure relative Axios API client, credentials, RFC 7807 errors, and strict refresh coordination (`src/lib/api.ts`).
+- [x] Configure TanStack Query client (`src/lib/queryClient.ts`).
+- [x] Build responsive layout shell (`AppShell`, `Navbar`, `Sidebar`, `LanguageToggle`, `ThemeToggle`) and loading/error/empty/not-found primitives.
+- [x] Build responsive `LoginPage` and `RegisterPage` with form validation and actual Phase 3 auth routes.
+- [x] Implement `AuthGuard` protecting the generic dashboard placeholder; backend remains authorization authority.
+- [x] Verify mobile, tablet, and desktop English LTR and Arabic RTL layouts in a browser; fix the narrow-header wrap.
+- [x] Pass frontend tests, TypeScript check, lint, build, and local API proxy smoke test.
+- [x] Takeover verification (Claude): emit login/logout signals inside the Web Lock, bound auth request time, apply saved direction before first paint, make the mobile drawer an accessible modal dialog, fix the language-toggle accessible name, mirror directional icons in RTL, and verify the proxied register→login→refresh→logout lifecycle live.
 
 ---
 
@@ -139,6 +143,7 @@ Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's in
 - [ ] Configure exact trusted proxy IPs, strip untrusted forwarding headers, and add a shared auth rate limiter before multi-worker or multi-instance deployment.
 - [ ] Verify the production Pages `/api/*` proxy preserves paths, methods, cookies and `Set-Cookie`, avoids API caching, and records the real client IP only through a trusted ingress; otherwise use edge rate limiting and mark app IP audit as proxy-derived.
 - [ ] Assert `ENVIRONMENT=production`, strong secret, secure cookies, HTTPS origin and debug off in deployment automation; do not deploy an unchanged local `.env`.
+- [ ] Resolve or formally accept BUG-013 by reviewing ADR 002's pinned Vite 5 / React Router 6 / Vitest 2 versions against npm advisories before shared development or public deployment; retest after any major upgrade.
 - [ ] Write multi-stage, non-root `backend/Dockerfile`.
 - [ ] Write multi-stage Nginx `frontend/Dockerfile`.
 - [ ] Configure GitHub Actions workflow `backend-ci.yml`.

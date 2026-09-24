@@ -181,7 +181,7 @@ frontend/
 │   ├── App.tsx                # App root with QueryProvider, I18nProvider, Router
 │   ├── main.tsx               # DOM mounting entry point
 │   └── index.css              # Tailwind imports, custom font faces, RTL utilities
-├── .env.example               # Frontend environment template (VITE_API_URL)
+├── (no API URL env file)       # Browser API paths are relative /api/v1 per ADR 011
 ├── Dockerfile                 # Multi-stage production Nginx static container
 ├── index.html                 # Main HTML template with dynamic dir attribute
 ├── package.json               # Frontend dependencies & npm scripts

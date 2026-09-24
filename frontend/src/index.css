@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: Inter, system-ui, sans-serif; }
+  html[lang='ar'] body, body [lang='ar'] { font-family: Cairo, Tahoma, sans-serif; }
+  body [lang='en'] { font-family: Inter, system-ui, sans-serif; }
+  button, input { font: inherit; }
+  button, a, input { -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 3px solid #5d8af5; outline-offset: 3px; }
+}
+
+@layer components {
+  .panel { @apply rounded-[1.5rem] border border-slate-200/80 bg-white shadow-panel dark:border-slate-800 dark:bg-slate-900; }
+  .icon-button { @apply inline-flex min-h-10 min-w-10 items-center justify-center rounded-xl text-muted transition-colors hover:bg-slate-100 hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white; }
+  .button-primary { @apply inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-5 font-semibold text-white shadow-lg shadow-blue-600/15 transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60; }
+  .button-secondary { @apply inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 font-semibold text-ink transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800; }
+  .form-input { @apply min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-ink placeholder:text-slate-400 focus:border-accent focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:focus:ring-blue-900; }
+  .form-label { @apply mb-2 block text-sm font-semibold text-ink dark:text-slate-100; }
+  .skip-link { @apply fixed start-4 top-4 z-50 -translate-y-24 rounded-lg bg-ink px-4 py-2 text-white focus:translate-y-0; }
+}

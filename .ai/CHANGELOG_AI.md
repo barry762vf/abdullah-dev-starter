@@ -10,6 +10,24 @@ This file tracks every AI agent session, modified files, verification performed,
 
 ## 📋 Session Log
 
+### 🔹 2026-09-24: Phase 4 takeover and completion
+- **Agent Role / ID:** Claude Code (took over from Codex at its usage limit)
+- **Starting State:** Codex Phase 4 work was complete in scope but entirely uncommitted on `main` at `e5327a2`; all of it was preserved.
+- **Changes:** Login/logout signals inside the Web Lock (BUG-014); 20 s auth-transport timeout; root `lang`/`dir` set at i18n load, with layout effects for direction and theme; accessible modal mobile drawer with focus handling and `aria-expanded`; language toggle label-in-name with `lang`; RTL-mirrored sign-in/out icons; key-based login status messages; registration 422 and >128-character feedback; not-found `h1`; one `docs/AUTH_STRATEGY.md` sentence.
+- **Verification:** Frontend 25 tests, typecheck, lint, build; backend 43 tests and Ruff; npm audit unchanged (BUG-013). Live Vite proxy lifecycle register→login→refresh→logout against the guarded test database (user removed afterwards); English/Arabic layout measured and screenshotted at 1440/768/375 px.
+- **Next Task:** Phase 5 administration only.
+
+### 🔹 2026-09-24: Phase 4 frontend shell and bilingual engine
+- **Agent Role / ID:** Codex (Primary Implementation Engineer)
+- **Primary Goal:** Implement Phase 4 only, following ADR 002 (React 18/Vite 5), ADR 005 (logical RTL/LTR styling), ADR 011 (same-origin API and strict refresh), and ADR 012 (backend configuration boundary).
+- **Implementation:** Added a static React/TypeScript SPA with responsive AppShell, Navbar, collapsible RTL-aware Sidebar, language and theme controls, generic home and guarded dashboard, bilingual login/register forms, and loading/error/empty/not-found states. i18next loads Arabic/English dictionaries, switches root `lang`/`dir`, and persists language separately from authentication. Cairo/Inter load with `display=swap` and system fallbacks. Tailwind logical utilities and direction-neutral layout avoid duplicate RTL stylesheets.
+- **API and auth:** Vite proxies `/api/*` to local FastAPI; the Axios client uses relative `/api/v1`, cookie credentials, `X-Requested-With`, and normalized RFC 7807 errors. Browser refresh uses in-tab single-flight, a cross-tab Web Lock, `/users/me` recheck, state-only BroadcastChannel signals (including ambiguous refresh), and no automatic refresh without Web Locks. No token is stored in JavaScript-accessible storage. Backend code and replay policy were not changed.
+- **Files Added:** `frontend/` source, tests, Tailwind/Vite/TypeScript/ESLint configuration, and npm lockfile.
+- **Files Changed:** `README.md`, auth and folder docs, ADR 011 status, `.ai/` state and durable Second Brain handoff.
+- **Verification:** `npm run test` passed **17 tests**; `npm run typecheck`, `npm run lint`, and `npm run build` passed. Live Vite `/api/v1/health` returned HTTP 200 JSON from FastAPI. Manual browser checks covered English LTR and Arabic RTL at 390 px mobile, 820 px tablet, and 1440 px desktop; sidebar mirrored, registration/login fields remained usable, and Arabic persisted after reload. Backend files were unchanged, so backend tests were not rerun in this phase.
+- **Risk:** Full `npm audit --audit-level=high` failed with 7 advisories in ADR-selected old majors; production-only audit found two moderate Router advisories. BUG-013 records the scoped mitigation and required later version review. BUG-009/010 and the production Pages edge proxy remain deployment gates.
+- **Next Task:** Phase 5 backend admin routes and frontend role-gated administration, with backend authorization as the security boundary. Do not deploy publicly before the tracked proxy, limiter, and dependency gates are resolved.
+
 ### 🔹 2026-09-24: Independent Phase 3 security audit closure
 - **Agent Role / ID:** Codex (Primary Implementation Engineer)
 - **Primary Goal:** Verify Claude's Phase 3 authentication audit independently and address pre-Phase-4 security findings without implementing the frontend.

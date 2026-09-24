@@ -11,14 +11,14 @@
 
 | Metric | Status | Details |
 | :--- | :--- | :--- |
-| **Active Roadmap Phase** | **Phase 3 security audit closed; Phase 4 next** | Phases 0–3 are implemented and verified. The Phase 3 independent audit has a documented browser contract and tracked production gates; no frontend work started. |
+| **Active Roadmap Phase** | **Phase 4 complete; Phase 5 next** | Frontend shell, bilingual RTL/LTR engine, auth pages, and browser refresh coordination are implemented and verified (Codex implementation, finished by Claude). No Phase 5 administration work started. |
 | **Backend State** | Authentication and RBAC foundation complete | Argon2id, JWT access cookies/Bearer fallback, rotating opaque refresh tokens, current database role guards, explicit admin bootstrap, auth audit, and scoped rate limits. |
-| **Frontend State** | Not Started | Directory structure, styling, and bidi strategy specified. |
+| **Frontend State** | Phase 4 implemented | React 18/Vite 5/TypeScript, Tailwind logical styles, Cairo/Inter, i18next, responsive shell, login/register, guarded generic dashboard, relative API client and local proxy. |
 | **Database State** | Revisions 001 and 002 verified | Docker PostgreSQL healthy; `abdullah_core_test` passed explicit upgrade, downgrade to base, re-upgrade, Alembic drift check, and new regressions. Development schema was not changed. |
 | **Authentication** | Phase 3 implemented | Registration, login, refresh, logout, and self profile routes pass live PostgreSQL tests. Known reuse revokes active sessions; unknown/expired tokens do not. |
-| **Test Suite** | Audit fixes verified | 43 backend tests pass, including independent-connection refresh race, explicit environment validation, Argon2 worker offload, and JSON-only auth requests; Ruff lint/format, dependency check, and Alembic drift check pass. |
+| **Test Suite** | Phase 4 checks passing | 25 frontend Vitest tests and 43 backend pytest tests pass; TypeScript, ESLint, Vite build and Ruff pass. Live Vite proxy register→login→refresh→logout verified against the test database; English LTR / Arabic RTL measured at desktop, tablet and mobile. |
 | **Documentation** | Foundation guide complete | Engineering guides are in `docs/`; root `README.md` and `LICENSE` are present. |
-| **Active Blockers** | None for Phase 4 local integration | ADR 011 chooses a same-origin `/api/*` topology and browser refresh contract. Production remains gated on implementing/verifying the edge proxy, trusted ingress and client IP, and stronger shared/edge abuse controls (BUG-009/010). |
+| **Active Blockers** | None for local Phase 4 behavior | Production remains gated on the Pages edge proxy, trusted client IP and stronger shared/edge abuse controls (BUG-009/010). BUG-013 tracks old-major frontend dependency advisories; no production deployment is claimed. |
 
 ---
 
@@ -45,9 +45,13 @@
 - ✅ Independently verified Claude's Phase 3 audit: both HIGH findings and all four MEDIUM findings have explicit dispositions in `.ai/REVIEW_PHASE3_AUTH_CODEX.md`; the original audit is preserved.
 - ✅ Offloaded Argon2 work to a bounded worker pool, made `ENVIRONMENT` mandatory, disabled local Uvicorn proxy-header trust, chose the same-origin browser topology and documented cross-tab refresh behavior in ADRs 011–012.
 - ✅ Verified 43 backend tests against the dedicated PostgreSQL test database, Ruff lint/format, dependency integrity, and Alembic drift after the audit changes. The normal development schema was not changed.
+- ✅ Implemented Phase 4 React/Vite/TypeScript static SPA, Tailwind logical styles, Cairo/Inter typography, English/Arabic i18next and root direction switching, persisted language/theme preferences, responsive shell, generic home/dashboard, bilingual auth forms, and route guard.
+- ✅ Added relative `/api/v1` Axios client with RFC 7807 errors, cookie credentials, strict Web Lock/single-flight refresh, state-only BroadcastChannel, and safe no-Web-Locks behavior; local Vite `/api` proxy returned a real backend health response.
+- ✅ Verified 17 frontend tests, TypeScript, lint, production build, and manual mobile/tablet/desktop English/Arabic layouts. Dependency audit findings are recorded as BUG-013.
+- ✅ Claude finished Phase 4: session signals emitted inside the Web Lock (BUG-014), auth request timeout, pre-paint root direction, accessible modal mobile drawer, label-in-name language toggle, RTL-mirrored directional icons, language-following status messages, and 422/128-character registration feedback. 25 frontend and 43 backend tests pass; the proxied auth lifecycle was verified live.
 
 ---
 
 ## 3. Immediate Focus (Next Up)
 
-The exact next task is **Phase 4 frontend shell and bilingual engine** from `docs/DEVELOPMENT_ROADMAP.md`, using relative `/api/v1`, a local Vite `/api` proxy, and the browser refresh contract in `docs/AUTH_STRATEGY.md`. Implement and test the production Pages `/api/*` proxy before deployment. BUG-009/010 remain production hardening gates; do not claim deployed auth safety or real client-IP accuracy before those live checks pass.
+The exact next roadmap task is **Phase 5 administration** from `docs/DEVELOPMENT_ROADMAP.md`, after reviewing this Phase 4 handoff. Build backend admin routes and frontend role-gated administration with server-side authorization tests; do not treat client route guards as security. Before public deployment, implement/verify the Pages proxy and resolve BUG-009/010/013.

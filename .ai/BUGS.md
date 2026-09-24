@@ -26,6 +26,16 @@ Whenever a bug, regression, or environment fault is identified, record it immedi
 
 ## 2. Active Bugs
 
+### 🐛 BUG-013: Selected frontend major versions have unresolved npm advisories
+- **Date Discovered:** 2026-09-24
+- **Severity:** High for development tooling; Medium for shipped SPA dependency
+- **Component:** Frontend dependencies
+- **Symptoms:** `npm audit --audit-level=high` reports 7 advisories (5 moderate, 1 high, 1 critical) in the locked Vite 5/Vitest 2 toolchain and React Router 6. Production-only audit reports two moderate React Router advisories.
+- **Root Cause:** ADR 002 and the folder architecture select older major versions; npm's proposed fixes require Vite 8, Vitest 5, and React Router 7, which are major upgrades outside Phase 4's approved stack.
+- **Fix Applied:** Vite dev server binds only `127.0.0.1`; no Vite/Vitest server is shipped in the static production bundle. The only post-login navigation target is the fixed `/dashboard` path, and all app links use fixed internal paths; the SSR hydration advisory does not apply to this SPA. No forced major upgrade was made silently.
+- **Verification:** Full npm audit failed with 7 findings. `npm audit --omit=dev --audit-level=high` exited 0 but still reported two moderate Router findings. Frontend tests, typecheck, lint and static build pass.
+- **Status:** Active; reassess and upgrade with ADR review before shared development or public deployment. Do not treat the successful build as clearing the advisory.
+
 ### 🐛 BUG-009: Real client IP depends on unverified production proxy trust
 - **Date Discovered:** 2026-09-24
 - **Severity:** Medium
@@ -49,6 +59,16 @@ Whenever a bug, regression, or environment fault is identified, record it immedi
 ---
 
 ## 3. Resolved Bugs
+
+### 🐛 BUG-014: Logout signal emitted after releasing the session Web Lock
+- **Date Discovered:** 2026-09-24
+- **Severity:** Low
+- **Component:** Frontend auth coordinator (`frontend/src/lib/api.ts`)
+- **Symptoms:** A refresh queued behind logout acquired the Web Lock before `signed-out` was emitted and called `/users/me` and `/auth/refresh`, contrary to the ADR 011 contract.
+- **Root Cause:** `login()` and `logout()` emitted their BroadcastChannel signal after `navigator.locks.request` resolved.
+- **Fix Applied:** Signals are emitted inside the locked operation. Impact was limited: the logout response had already cleared the refresh cookie, so the stray refresh received a 401 and could not trigger reuse revocation.
+- **Verification:** A new Vitest test with a serializing lock fails before and passes after the fix; the live logout left `/users/me` and `/auth/refresh` at 401.
+- **Status:** Resolved
 
 ### 🐛 BUG-008: Default split hosting domains do not carry Lax auth cookies
 - **Date Discovered:** 2026-09-24

@@ -1,0 +1,79 @@
+{
+  "common": {
+    "appName": "Developer Kit",
+    "skipToContent": "Skip to content",
+    "language": "Language",
+    "theme": "Theme",
+    "lightTheme": "Use light theme",
+    "darkTheme": "Use dark theme",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "createAccount": "Create account",
+    "tryAgain": "Try again",
+    "backHome": "Back home",
+    "loading": "Loading…",
+    "email": "Email address",
+    "password": "Password",
+    "fullName": "Full name"
+  },
+  "nav": {
+    "home": "Overview",
+    "dashboard": "Dashboard",
+    "workspace": "Workspace",
+    "foundation": "Foundation"
+  },
+  "home": {
+    "eyebrow": "Your starting point",
+    "title": "A calm foundation for your next idea.",
+    "description": "A reusable application shell with Arabic and English built in. Connect your own features when you are ready.",
+    "primaryAction": "Open dashboard",
+    "secondaryAction": "Create an account",
+    "languageCardTitle": "Made for both directions",
+    "languageCardBody": "Switch between English and Arabic. The layout, type and navigation move with you.",
+    "apiCardTitle": "Ready to connect",
+    "apiCardBody": "The browser uses one relative API path for local development and future deployment.",
+    "foundationLabel": "In this foundation",
+    "foundationValue": "UI shell · Bilingual · API ready"
+  },
+  "dashboard": {
+    "eyebrow": "Your workspace",
+    "title": "Welcome back, {{name}}.",
+    "description": "This space is ready for the features your project needs.",
+    "emptyTitle": "Nothing here yet",
+    "emptyBody": "Start with your own domain features. The shell and authentication are ready."
+  },
+  "auth": {
+    "loginTitle": "Welcome back",
+    "loginDescription": "Sign in to continue to your workspace.",
+    "registerTitle": "Create your account",
+    "registerDescription": "Set up your account to get started.",
+    "noAccount": "New here?",
+    "haveAccount": "Already have an account?",
+    "passwordHint": "Use at least 12 characters.",
+    "invalidEmail": "Enter a valid email address.",
+    "passwordRequired": "Enter your password.",
+    "passwordTooShort": "Use at least 12 characters.",
+    "passwordTooLong": "Use 128 characters or fewer.",
+    "nameRequired": "Enter your full name.",
+    "registerSuccess": "Account created. Sign in to continue.",
+    "sessionExpired": "Your session ended. Please sign in again.",
+    "signOutFailed": "Could not sign out. Please try again.",
+    "invalidCredentials": "Check your email and password.",
+    "emailTaken": "An account with this email already exists.",
+    "rateLimited": "Too many attempts. Please wait and try again.",
+    "registerUnavailable": "Registration is temporarily unavailable.",
+    "invalidDetails": "Some details were not accepted. Check them and try again."
+  },
+  "states": {
+    "loadingTitle": "Getting things ready",
+    "loadingBody": "This should only take a moment.",
+    "errorTitle": "Something went wrong",
+    "errorBody": "Please try again in a moment.",
+    "unauthorizedTitle": "Sign in required",
+    "unauthorizedBody": "Sign in to open this page.",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "The page you requested does not exist."
+  }
+}

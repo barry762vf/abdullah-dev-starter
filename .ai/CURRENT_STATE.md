@@ -11,14 +11,14 @@
 
 | Metric | Status | Details |
 | :--- | :--- | :--- |
-| **Active Roadmap Phase** | **Phase 8 locally complete; GitHub container CI pending** | Optional provider slots added after Phase 7's exact commit passed all three GitHub workflows. |
+| **Active Roadmap Phase** | **Phase 8 complete** | All roadmap phases are implemented. Phase 8 backend and production container workflows passed on `10de09c`. |
 | **Backend State** | Auth, RBAC and administration complete | Phase 3 auth plus `/api/v1/admin` users/PATCH/stats/audit-logs under one router guard, superadmin-only role changes, advisory-lock last-superadmin invariant and admin audit rows (ADR 013). |
 | **Frontend State** | Phase 5 implemented | Phase 4 shell plus `/admin` (overview, users, audit log) behind AuthGuard and UX-only RoleGuard; accessible dialogs, bilingual RTL/LTR tables. |
 | **Database State** | Revisions 001 and 002 verified | Docker PostgreSQL healthy; `abdullah_core_test` passed explicit upgrade, downgrade to base, re-upgrade, Alembic drift check, and new regressions. Development schema was not changed. |
 | **Authentication** | Phase 3 implemented | Registration, login, refresh, logout, and self profile routes pass live PostgreSQL tests. Known reuse revokes active sessions; unknown/expired tokens do not. |
-| **Test Suite** | Phase 8 local checks passing | 136 backend pytest (95% coverage) against guarded PostgreSQL, with Alembic drift check; Ruff and pip check pass. 54 frontend Vitest tests, TypeScript, ESLint and build pass. Phase 7 container CI passed on `3726cca`. |
+| **Test Suite** | Phase 8 verified | 136 backend pytest (95% coverage) locally and in CI, with Alembic drift check; Ruff and pip check pass. 54 frontend Vitest tests, TypeScript, ESLint and build pass locally. Phase 8 container CI built the stack and passed `scripts/smoke-prod.sh`. |
 | **Documentation** | Foundation guide complete | Engineering guides are in `docs/`; root `README.md` and `LICENSE` are present. |
-| **Active Blockers** | None in the repository | Live provider calls and the first Cloudflare/Railway deployment still require project credentials; Docker CLI is unavailable in this task environment, so Phase 8 production Compose must be verified by CI. |
+| **Active Blockers** | None in the repository | Live paid-provider calls and the first Cloudflare/Railway deployment still require project credentials. Docker CLI is unavailable in this task environment; the GitHub container workflow verified the production Compose change. |
 
 ---
 
@@ -54,4 +54,4 @@
 
 ## 3. Immediate Focus (Next Up)
 
-Push Phase 8 and verify its GitHub backend and container workflows. Then stop roadmap implementation; the next operational task is the documented first live deployment smoke test and Cloudflare WAF setup with real host credentials. Provider-specific live tests belong to a cloned project when those slots are enabled.
+Stop roadmap implementation after Phase 8. The next operational task is the documented first live deployment smoke test and Cloudflare WAF setup with real host credentials. Provider-specific live tests belong to a cloned project when those slots are enabled.

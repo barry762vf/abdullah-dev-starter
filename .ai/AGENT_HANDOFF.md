@@ -2,7 +2,7 @@
 
 > From: Codex, continuing Claude Code's Phase 7 handoff
 > Date: 2026-09-24
-> Status: Phase 7 verified; Phase 8 locally verified, GitHub CI and Git push in progress.
+> Status: Phases 0–8 complete. Phase 8 pushed and backend/container CI green.
 
 ## Current takeover and Phase 8 work
 
@@ -11,8 +11,8 @@
 - **Added:** `backend/app/integrations/{base,factory}.py`, Gemini, Telegram, Supabase Storage and SMTP adapters; `backend/app/api/v1/integrations.py`; `backend/tests/unit/test_integrations.py`; `docs/INTEGRATIONS.md`.
 - **Changed:** Settings, API router, dependency placement, production Compose egress/environment, `.env.example`, `deploy/production.env.example`, route inventory test, deployment docs, ADR 015 and `.ai/` state.
 - **Architecture:** Four typed protocols and Null fallbacks under ADR 006/015; provider selection validates credentials at startup. Gemini uses REST rather than an eager SDK. The AI endpoint is superadmin-only. Telegram's webhook validates its configured secret and refuses to acknowledge updates until a clone installs a durable handler. Storage and email have no public routes. API egress is deliberate; db and migrate remain internal.
-- **Checks:** 136 backend pytest tests against guarded PostgreSQL (95% coverage), Alembic drift check, Ruff lint/format and pip check passed; 54 frontend Vitest tests with coverage, TypeScript, ESLint and build passed. Full npm audit: exit 1 with 8 accepted findings; `npm audit --omit=dev --audit-level=high`: exit 0 with two moderate. New commit's container CI remains to be checked.
-- **Risks:** No paid provider credentials were used, so live Gemini/Telegram/Supabase/SMTP behavior is not proven. The first Cloudflare/Railway smoke and WAF rules remain per-deployment work. The Docker CLI is absent in this task environment; use the GitHub `containers` workflow to verify Phase 8 Compose. BUG-013 remains the documented accepted dependency scope.
+- **Checks:** 136 backend pytest tests against guarded PostgreSQL (95% coverage), Alembic drift check, Ruff lint/format and pip check passed; 54 frontend Vitest tests with coverage, TypeScript, ESLint and build passed. Full npm audit: exit 1 with 8 accepted findings; `npm audit --omit=dev --audit-level=high`: exit 0 with two moderate. Phase 8 code commit `10de09c` was pushed normally; [backend-ci](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35974525533) passed 136 tests and 95% coverage, and [containers](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35974525553) built the stack, reached healthy db/api/web, passed `scripts/smoke-prod.sh`, and tore down the stack. The unchanged frontend passed locally and its prior CI on `3726cca` was green.
+- **Risks:** No paid provider credentials were used, so live Gemini/Telegram/Supabase/SMTP behavior is not proven. The first Cloudflare/Railway smoke and WAF rules remain per-deployment work. The Docker CLI is absent in this task environment; the green GitHub `containers` workflow verified Phase 8 Compose. BUG-013 remains the documented accepted dependency scope. GitHub Actions emitted non-failing Node 20 deprecation and future runner-image notices.
 - **Exact next task after Phase 8:** Stop roadmap implementation. On the chosen public hosts, follow `docs/DEPLOYMENT_STRATEGY.md` §8 to set WAF limits and verify same-origin cookies, `/users/me`, refresh/logout, proxy bypass refusal and real audit IP. Enable optional providers only with project-specific credentials, quotas, egress rules and (for Telegram) durable update handling.
 
 ---

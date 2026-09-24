@@ -9,17 +9,17 @@
 ## 1. System Topology & Pattern Rules
 
 ```
-[Browser / Client] 
-       │ (HTTPS / JSON REST API)
+[Browser / Client]
+       │ (SPA and same-origin /api/* through Vite, Nginx or Pages Function)
        ▼
 [FastAPI Backend (Uvicorn)]
   ├── app/core/          -> config, database.get_db, logging, exceptions, security
   ├── app/api/deps.py    -> current DB identity and role guards
-  ├── app/api/v1/        -> auth.py, users.py, health.py (admin.py in Phase 5)
+  ├── app/api/v1/        -> auth.py, users.py, health.py, admin.py, integrations.py
   ├── app/schemas/       -> Pydantic v2 validation contracts
   ├── app/services/      -> Pure business logic
   ├── app/models/        -> SQLAlchemy 2.0 ORM entities
-  └── app/integrations/  -> Pluggable slots (AI, Telegram, Storage)
+  └── app/integrations/  -> Disabled-by-default Gemini, Telegram, Storage, SMTP slots
        │ (SQLAlchemy 2.0 Async / asyncpg)
        ▼
 [PostgreSQL 16 / Supabase Database]
@@ -31,7 +31,7 @@
 
 ### Backend Patterns:
 1. **Dependency Injection:** Database sessions must ALWAYS be acquired through `db: AsyncSession = Depends(get_db)`. Never instantiate engines or sessions inside route handlers.
-2. **Permission Guarding:** Restrict endpoints using `User = Depends(require_role(["admin", "superadmin"]))`.
+2. **Permission Guarding:** Restrict endpoints using `Depends(require_role(["admin"]))`; superadmin passes every role guard through current database membership.
 3. **Data Sanitization:** Never return ORM instances directly. Always use `response_model=UserResponse` in route decorators.
 4. **Error Handling:** Raise `AppException` or subclasses from `app.core.exceptions`. Never let raw unhandled Python exceptions bubble up to users without translation.
 

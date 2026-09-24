@@ -10,6 +10,14 @@ This file tracks every AI agent session, modified files, verification performed,
 
 ## 📋 Session Log
 
+### 🔹 2026-09-24: v1.0.0 release-candidate audit and template preparation
+
+- **Scope:** Audited shipped code and accepted ADRs against docs, clone steps, Git, security boundaries, integrations, dependencies, CI and public-template hygiene. No new product feature or roadmap phase.
+- **Changes:** Rewrote README and current architecture/auth/database/security/folder/technology/vision guides to match code; added customization guide and release notes; sanitized tracked private machine context; aligned backend/frontend package metadata to 1.0.0; added ADR 016 and updated `.ai/` state and durable handoff. Existing Git history was not rewritten.
+- **Verification:** Backend 91 unit tests and 136 full PostgreSQL tests (95% coverage), Ruff lint/format, pip check and guarded Alembic drift passed. Frontend 54 Vitest tests (97.91% lines, 90.51% branches), typecheck, lint and build passed. Full npm audit: 8 accepted findings; production high gate: exit 0 with 2 moderate. Docker CLI absent locally; previous GitHub container workflow passed for Phase 8 code SHA `10de09c`. Read-only security review found no confirmed high/critical application defect. Post-commit CI must be checked before tagging.
+- **Release state:** Prepare and push a clean release commit, then check its workflows. No tag was created during this audit.
+
+
 ### 🔹 2026-09-24: Phase 8 reusable extension slots
 
 - **Agent Role / ID:** Codex (primary implementation engineer; took over after Claude Code reached usage limit).
@@ -131,7 +139,7 @@ This file tracks every AI agent session, modified files, verification performed,
 - **Agent Role / ID:** Senior Software Architect & Technical Project Manager (Antigravity)
 - **Primary Goal:** Comprehensive architectural analysis, technology stack selection, and creation of the multi-agent collaboration framework for Abdullah Developer Core.
 - **Key Actions Taken:**
-  1. Inspected Abdullah's local **Obsidian Second Brain** (`C:\Users\Omen-16\Desktop\second brain\Second Brain Vault`) to ground architectural decisions in his personal skills, past projects (e.g., *Yalla Nunshara*, *Yalla Maqal*, *ZORO Exams*, *Tuckii*), hardware specifications (HP Omen 16), and coding preferences.
+  1. Reviewed optional private planning context to ground early architecture decisions. The local vault path, device details, and unrelated project names were removed from the public template during v1.0 release preparation.
   2. Evaluated technology stacks:
      - Selected **FastAPI + Pydantic v2 + SQLAlchemy 2.0 (async)** over Flask for type-safe validation, interactive OpenAPI docs, and async performance.
      - Selected **React 18 + Vite 5 + TypeScript + Tailwind CSS** over Next.js App Router for decoupled architecture, zero-cost static edge hosting on Cloudflare Pages, and zero hydration complexity.

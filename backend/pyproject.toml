@@ -1,7 +1,7 @@
 [project]
-name = "abdullah-dev-core-backend"
-version = "0.1.0"
-description = "FastAPI backend foundation for Abdullah Developer Core"
+name = "abdullah-dev-kit-backend"
+version = "1.0.0"
+description = "FastAPI backend for Abdullah Developer Kit"
 requires-python = ">=3.11"
 
 # requirements.txt and requirements-dev.txt pin installable dependencies.

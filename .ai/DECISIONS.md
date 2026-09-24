@@ -187,3 +187,15 @@ This file contains permanent records of all major technical and architectural de
 - **Context:** Phase 8 must make Gemini, Telegram, Supabase Storage and email available to cloned projects while preserving ADR 006's lightweight, credential-free default startup. The production API had no outbound network route.
 - **Decision:** Four typed protocols have inert Null implementations; validated environment selectors construct the reference adapters only when enabled. Gemini, Telegram and Supabase use their documented HTTPS APIs through the already-used `httpx` dependency, avoiding eager vendor SDK imports. Email uses authenticated SMTP and STARTTLS off the event loop. The only generic AI route is superadmin-only; storage and mail have no public routes. The Telegram webhook validates Telegram's secret header and returns 503 until a cloned app supplies a durable update handler, so updates are retried rather than silently dropped. The API alone joins a deliberate Compose egress network; database and migration services stay internal.
 - **Consequences:** Configured providers require outbound access and operator-managed credentials, quotas and data policies. Cloned projects must authorize storage/mail use and install a durable Telegram handler. No live paid provider calls are part of CI. OpenAI and WhatsApp remain protocol extension examples, not enabled products.
+
+---
+
+## ADR 016: Public template context and release version
+
+- **Date:** 2026-09-24
+- **Status:** Accepted for v1.0.0 release preparation
+- **Context:** The public starter contained local vault paths, private profile details and planning prose describing unshipped features. Backend/frontend package metadata still said 0.1.0. GitHub template clones must be understandable without the original engineer's workstation.
+- **Decision:** Keep `.ai/` as the reusable collaboration record, but keep personal/vault context private and make `AI_CONTEXT.md` an optional bridge. The annotated Git tag is the canonical release version; align backend/frontend package metadata with it, without adding a runtime version endpoint or generator. Current code and accepted ADRs take priority over historical roadmap projections.
+- **Consequences:** The current tree is suitable for a public template after verification. Earlier commits may retain removed text; history is not rewritten or force-pushed. Future clones replace project metadata and branding using `docs/CUSTOMIZATION.md`.
+
+---

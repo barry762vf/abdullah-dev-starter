@@ -153,7 +153,7 @@ Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's in
 - [x] Create `docker-compose.prod.yml` (migrate release job, internal network, read-only hardened containers) and `scripts/build.ps1`, `scripts/smoke-prod.sh`.
 - [x] Transaction-pooler mode, configurable pool limits, docs hidden outside development, 3 s readiness bound, `ENV_FILE` container behavior.
 - [x] Add `backend/.dockerignore` and `frontend/.dockerignore`.
-- [ ] Owner decision: whether the public repository should keep personal context and local paths in `AI_CONTEXT.md` / `.ai/`.
+- [x] Sanitize public-template context and local paths while preserving the `.ai/` collaboration workflow for v1.0.
 - [ ] Operational, per deployment: run the DEPLOYMENT_STRATEGY §8 live checks on the real Cloudflare Pages + Railway (or chosen) hosts, and add Cloudflare WAF rate-limit rules.
 - [ ] Decide whether a separate audit-log database role or metadata naming convention is needed when schema/deployment complexity justifies it.
 
@@ -168,3 +168,15 @@ Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's in
 - [x] Validate provider selection and required settings; test Null and enabled paths with mocked services.
 - [x] Provide deliberate API egress in production Compose, production/dev environment templates and integration guidance.
 - [ ] Per deployment: configure real provider credentials, quotas, outbound firewall rules and a durable Telegram handler before enabling those services.
+
+---
+
+## v1.0.0 release candidate (no new roadmap phase)
+- [x] Audit current architecture, auth/admin/proxy/integration security and public-template hygiene.
+- [x] Align package metadata to 1.0.0; document Git tag as canonical release version.
+- [x] Refresh README and engineering guides, add customization guide and release notes.
+- [x] Run backend/frontend suites, lint/format/type/build, dependency audits and guarded Alembic drift check.
+- [ ] Confirm release-preparation commit and all triggered GitHub workflows are green for its SHA.
+- [ ] Create and publish annotated `v1.0.0` only after the release checks pass.
+- [ ] Optional owner action: enable GitHub **Settings → General → Template repository**.
+- [ ] Project-specific deployment: verify live host cookies, proxy bypass, audit IP, TLS/WAF and any enabled providers.

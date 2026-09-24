@@ -1,1 +1,1 @@
-"""Abdullah Developer Core backend."""
+"""Abdullah Developer Kit backend."""

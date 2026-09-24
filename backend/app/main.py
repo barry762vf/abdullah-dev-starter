@@ -57,7 +57,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     docs = settings.docs_enabled
     app = FastAPI(
-        title="Abdullah Developer Core",
+        title="Abdullah Developer Kit API",
         debug=settings.debug,
         lifespan=lifespan,
         docs_url="/docs" if docs else None,

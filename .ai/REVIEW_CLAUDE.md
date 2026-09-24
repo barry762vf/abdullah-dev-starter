@@ -140,8 +140,8 @@ When the documentation and the code disagreed, the code was treated as the truth
 
 | # | Finding | Recommendation |
 | :--- | :--- | :--- |
-| R1 | `.git` is owned by the Windows account `CodexSandboxOffline`, so `git` run as `Omen-16` fails with "detected dubious ownership". | Take ownership of the folder, or add a `safe.directory` entry deliberately. |
-| R2 | `AI_CONTEXT.md` and `.ai/*` contain personal details (university, hardware, career goals) and absolute local paths (`C:\Users\Omen-16\...`). | If the GitHub repository is public, decide whether this belongs there. |
+| R1 | One Windows checkout reported Git dubious ownership. | Verify repository ownership or set a deliberate `safe.directory` entry on that host. |
+| R2 | Early context included personal details and absolute local paths. | Public-template guidance was sanitized during v1.0 preparation; historical Git commits may retain old text. |
 | R3 | The root `.dockerignore` won't apply if the Phase 7 build context is `backend/`. | Add `backend/.dockerignore` in Phase 7. |
 | R4 | The test database must be created by hand. | Optional: a Compose init script that creates `abdullah_core_test`. |
 

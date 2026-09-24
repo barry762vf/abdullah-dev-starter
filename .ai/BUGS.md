@@ -26,7 +26,9 @@ Whenever a bug, regression, or environment fault is identified, record it immedi
 
 ## 2. Active Bugs
 
-*No active application bugs. BUG-009, BUG-010 and BUG-013 were resolved or formally accepted in Phase 7 (see ADR 014). Phase 8 provider network behavior is mocked; no paid-service credentials were used. The first live provider and Cloudflare/Railway checks remain deployment tasks.*
+*No active confirmed application bugs from the v1.0.0 release review. BUG-013 remains an accepted dependency risk under ADR 014. Phase 8 provider network behavior is mocked; no paid-service credentials were used. The first live provider and Cloudflare/Railway checks remain deployment tasks.*
+
+**Release audit, 2026-09-24:** Full npm audit still reports 8 findings (5 moderate, 1 high, 2 critical); the production high-severity gate exits 0 with two moderate React Router findings. The critical Vitest advisory concerns exposed Vitest UI/Browser Mode; neither is shipped or run by this starter. Vite binds to loopback in development. No new exploitable high/critical application path was confirmed. The current tree has no tracked `.env`, generated output or absolute machine path; prior public Git commits may retain removed personal text. The development database is not at Alembic head, but the dedicated test database passed the drift check; do not point integration tests at development data.
 
 ## 3. Resolved Bugs
 

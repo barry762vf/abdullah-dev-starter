@@ -1,5 +1,7 @@
 # 🗺️ Master Implementation Roadmap & Phase Plan
 
+> **Release status:** Phases 0–8 are complete. This is the historical plan; projected file names and providers can differ from what was accepted in ADRs 001–015. Use current code and `docs/ARCHITECTURE.md` for the v1.0.0 inventory. No Phase 9 is planned.
+
 > **Document:** `DEVELOPMENT_ROADMAP.md`  
 > **Status:** Approved Baseline  
 > **Platform:** Abdullah Developer Core (`abdullah-dev-core`)

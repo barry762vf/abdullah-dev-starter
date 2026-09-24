@@ -8,7 +8,7 @@
 
 ## 1. Multi-Agent Governance Framework
 
-This repository is developed, maintained, and extended by a collaborative team of human engineers (led by Abdullah) and multiple autonomous AI coding agents (Claude Code, Codex, Antigravity, DeepSeek). 
+This repository can be maintained by human engineers and coding agents. The tracked `.ai/` files preserve reusable operational context; private profiles and vault paths stay outside the template.
 
 To prevent context drift, file conflicts, architectural rot, and duplicate work, **every AI agent must strictly follow this protocol**.
 
@@ -55,8 +55,8 @@ Before touching any code, the agent **must read**:
 - **Surgical Edits Only:** Never replace entire large files if modifying a single function or component will suffice.
 - **Preserve Existing Comments:** Do not delete docstrings, license headers, or existing developer notes.
 - **Strict Typing:** All Python code must include type hints (`Mapped[str]`, `str`, `dict[str, Any]`). All React code must be typed TypeScript (no raw `any`).
-- **No Secret Commits:** Never hardcode API keys, passwords, or tokens. Read exclusively from `app.core.config.settings` or `import.meta.env`.
-- **Windows UTF-8 Compliance:** As recorded in Abdullah's Second Brain, ensure all file operations on Windows use explicit `utf-8` encoding to prevent Arabic character corruption.
+- **No Secret Commits:** Never hardcode API keys, passwords, or tokens. Read backend secrets from validated environment settings; never expose them through Vite's public build variables.
+- **Windows UTF-8 Compliance:** Preserve UTF-8 encoding for Arabic text on every platform.
 
 ### Step 3: Verification & Test Execution
 - Run tests on any code you modify before declaring the task complete:
@@ -69,7 +69,7 @@ Before ending your execution turn, you must:
 1. Update `.ai/CURRENT_STATE.md` with current achievements.
 2. Mark completed items in `.ai/TODO.md`.
 3. Append a new entry to `.ai/CHANGELOG_AI.md`.
-4. Overwrite `.ai/AGENT_HANDOFF.md` providing crystal-clear next steps for the incoming agent.
+4. Update `.ai/AGENT_HANDOFF.md` with the current verified state and next step; retain important prior evidence where useful.
 
 ---
 

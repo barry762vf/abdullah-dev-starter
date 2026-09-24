@@ -1,48 +1,49 @@
-# Abdullah Developer Core
+# Abdullah Developer Kit
 
-A reusable foundation for bilingual web applications, with a FastAPI API, a React and TypeScript client, and PostgreSQL. The repository is being built in [roadmap phases](docs/DEVELOPMENT_ROADMAP.md). Phases 0–4 provide the local database, FastAPI foundation, ORM models, migrations, authentication, and a bilingual frontend shell.
+A reusable full-stack starter for bilingual web applications. It includes a FastAPI API, PostgreSQL, a React/TypeScript SPA, authentication, role-based administration, production containers, CI, and optional integration slots. Clone it as a starting point for your own project; it is not a hosted service.
+
+**Stack:** Python 3.11+, FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16, React 18, Vite 5, TypeScript, Tailwind CSS. The Git tag is the release version; package metadata is aligned to `1.0.0` for this release.
 
 ```text
-Browser (React, Vite, Arabic/English)
-          |
-          v  /api/v1 (Vite proxy locally; Pages proxy in production)
-FastAPI REST API (authentication, roles, services)
-          |
-          v
-PostgreSQL 16 (local Docker or compatible hosted database)
+Browser ── same origin ──> SPA + /api/* proxy ──> FastAPI ──> PostgreSQL
+                  (Vite locally; Nginx or Pages Function in production)
 ```
 
-**Stack:** Python 3.11+ · FastAPI · SQLAlchemy 2.0 · PostgreSQL 16 · React 18 · Vite 5 · TypeScript
+## What's included
 
-## Quickstart
+- English LTR and Arabic RTL UI, theme preference, dashboard, and administration screens.
+- Argon2id passwords, short-lived access JWTs, rotating opaque refresh cookies, current database role checks, and audit logs.
+- User registration/login/logout, first-superadmin bootstrap, admin user management, stats, and audit viewer.
+- Reversible migrations and idempotent baseline role seed; isolated PostgreSQL integration tests.
+- Production Nginx/Compose stack, Cloudflare Pages proxy option, and GitHub Actions checks.
+- Disabled-by-default Gemini, Telegram, Supabase Storage, and SMTP adapter slots.
 
-Docker with Compose is required for the local database. From the repository root:
+## Start a local development copy
 
-1. Copy the template: `cp .env.example .env` (PowerShell: `Copy-Item .env.example .env`). The database credentials are for isolated local development only; administrator bootstrap values are deliberately blank. Set new secrets before real use. Keep `POSTGRES_PASSWORD` and the password in `DATABASE_URL` identical.
-2. Start the database: `docker compose up -d --wait db` (or run `.\scripts\dev.ps1` in PowerShell / `bash scripts/dev.sh` on Linux or macOS). Compose binds PostgreSQL to `127.0.0.1:5432` and persists data in the `postgres_data` named volume.
-3. Set up Python 3.11+ in `backend/`, install `requirements-dev.txt`, then run `python -m uvicorn app.main:app --reload --no-proxy-headers`. On Windows PowerShell: `py -3.11 -m venv backend/.venv`, `backend/.venv/Scripts/python.exe -m pip install -r backend/requirements-dev.txt`, then from `backend/` run `.venv/Scripts/python.exe -m uvicorn app.main:app --reload --no-proxy-headers`.
-4. From `frontend/`, run `npm ci` then `npm run dev`. Open `http://127.0.0.1:5173`. Vite forwards browser requests under `/api/*` to FastAPI at `127.0.0.1:8000`; the frontend always uses relative `/api/v1` URLs. No frontend API hostname or token environment variable is needed.
+Prerequisites: Git, Docker Engine with Compose, Python 3.11+, Node.js 22+, and npm. Commands below run from the repository root unless noted. The `.env.example` password is **local development only**.
 
-From `backend/`, run `.venv/Scripts/python.exe -m alembic upgrade head` to apply migrations to `DATABASE_URL`. Run `.venv/Scripts/python.exe -m app.core.seed` explicitly to insert missing baseline roles. Before exposing registration, set unique temporary `INITIAL_ADMIN_EMAIL` and `INITIAL_ADMIN_PASSWORD` values and run `.venv/Scripts/python.exe -m app.core.seed --bootstrap-admin`; then remove the bootstrap password. Never promote a self-registered account to superadmin if the intended email was taken. The API responds at `/api/v1/health` for liveness (`database: not_checked`) and `/api/v1/ready` for a PostgreSQL ping. Interactive docs are at `/docs`.
+1. Clone and enter the project: `git clone https://github.com/barry762vf/abdullah-dev-starter.git && cd abdullah-dev-starter`.
+   GitHub access is required while the source repository remains private; the owner may enable template mode and public visibility separately.
+2. Copy `.env.example` to `.env` (`cp .env.example .env`; PowerShell: `Copy-Item .env.example .env`). Keep `POSTGRES_PASSWORD` and the password in `DATABASE_URL` equal. Generate a new `SECRET_KEY` before exposing the API. `.env` is ignored by Git.
+3. Start PostgreSQL: `docker compose up -d --wait db`. Confirm it is healthy with `docker compose ps db`.
+4. Create a Python virtual environment and install dependencies: `python -m venv backend/.venv`; on Linux/macOS run `backend/.venv/bin/python -m pip install -r backend/requirements-dev.txt`, or on Windows run `backend/.venv/Scripts/python.exe -m pip install -r backend/requirements-dev.txt`.
+5. From `backend/`, apply migrations and seed roles: `<venv-python> -m alembic upgrade head` then `<venv-python> -m app.core.seed`, replacing `<venv-python>` with `.venv/bin/python` or `.venv/Scripts/python.exe`.
+6. Bootstrap the first superadmin **before opening registration**. Set a unique `INITIAL_ADMIN_EMAIL` and a strong, unique 12–128 character `INITIAL_ADMIN_PASSWORD` in your local shell (or temporarily in `.env`), then from `backend/` run `<venv-python> -m app.core.seed --bootstrap-admin`. Remove the bootstrap password afterward. The command never promotes an existing account; if the email is taken, choose a fresh one.
+7. Start the API from `backend/`: `<venv-python> -m uvicorn app.main:app --reload --no-proxy-headers`. Check `http://127.0.0.1:8000/api/v1/health` and `/api/v1/ready`; `/docs` is available in development.
+8. In another terminal, from `frontend/` run `npm ci` and `npm run dev`. Open `http://127.0.0.1:5173`, sign in with the bootstrapped account, then open `/dashboard` and `/admin`. Vite proxies relative `/api/*` requests to the API. The UI stores language/theme preferences, while credentials stay in HttpOnly cookies.
 
-For database integration tests, set `TEST_DATABASE_URL` to a separate PostgreSQL database whose name ends in `_test`. Create that database once, for example from the repository root with `docker compose exec -T db psql -U postgres -d postgres -c 'CREATE DATABASE abdullah_core_test'`. Then run `.venv/Scripts/python.exe -m pytest -q` from `backend/`. The migration test drops and recreates **only the test database schema**; never point this URL at development or production data. Tests refuse a URL without the `_test` suffix.
+The server and frontend are separate processes. Stop the database with `docker compose down`; its named volume remains until explicitly removed. `scripts/dev.ps1` and `scripts/dev.sh` are shortcuts for starting the local database.
 
-From `frontend/`, run `npm run test`, `npm run typecheck`, `npm run lint`, and `npm run build`. The UI stores only language and theme preferences in browser storage. Authentication uses HttpOnly cookies; see [the browser refresh contract](docs/AUTH_STRATEGY.md). The production Pages `/api/*` proxy and ingress hardening remain deployment tasks.
+## Verify a clone
 
-Check the container with `docker compose ps db`. Stop it with `docker compose down` (the named volume remains).
+Create the dedicated test database once: `docker compose exec -T db psql -U postgres -d postgres -c 'CREATE DATABASE abdullah_core_test'`. `TEST_DATABASE_URL` in `.env` must point to this database and end in `_test`; tests refuse a development/production database. From `backend/`, run `<venv-python> -m pytest --cov=app`, `<venv-python> -m pytest -m unit -q`, `<venv-python> -m ruff check .`, `<venv-python> -m ruff format --check .`, `<venv-python> -m pip check`, and `<venv-python> -m alembic check`. The integration migration test recreates **only the guarded test schema**.
 
-## Production
+From `frontend/`, run `npm run test:coverage`, `npm run typecheck`, `npm run lint`, `npm run build`, `npm audit`, and `npm audit --omit=dev --audit-level=high`. The full audit currently reports accepted advisories; see [BUG-013](.ai/BUGS.md). CI verifies backend, frontend, and production containers on relevant changes.
 
-Production uses one public origin: the `web` image serves the SPA and proxies `/api/*` to the API, which is reachable only through that proxy. Copy `deploy/production.env.example` to `deploy/production.env`, fill it, then run `docker compose --env-file deploy/production.env -f docker-compose.prod.yml up -d --build --wait` and `bash scripts/smoke-prod.sh`. Cloudflare Pages + Railway, migrations, the admin bootstrap, client-IP handling and rate limits are described in [the deployment strategy](docs/DEPLOYMENT_STRATEGY.md).
+## Customize and deploy
 
-## Documentation
+Start with [the customization guide](docs/CUSTOMIZATION.md) for branding, languages, roles, domains, database, admin account, integrations, and deployment target. The [deployment guide](docs/DEPLOYMENT_STRATEGY.md) covers self-hosted Docker and Cloudflare Pages with a container-hosted API. Production needs HTTPS, new secrets, and a one-time admin bootstrap. Its same-origin proxy keeps cookies first-party; proxy authentication and database-backed RBAC are part of the security model. See [security baseline](docs/SECURITY_BASELINE.md) and [auth contract](docs/AUTH_STRATEGY.md).
 
-- [Project vision](docs/PROJECT_VISION.md)
-- [System architecture](docs/ARCHITECTURE.md)
-- [Technology choices](docs/TECH_STACK.md)
-- [Development roadmap](docs/DEVELOPMENT_ROADMAP.md)
-- [Security baseline](docs/SECURITY_BASELINE.md)
-- [Deployment strategy](docs/DEPLOYMENT_STRATEGY.md)
-- [Optional integrations](docs/INTEGRATIONS.md)
+Optional providers are off by default and require credentials, egress and project-specific policies when enabled; see [integrations](docs/INTEGRATIONS.md). The first live Cloudflare/Railway deployment and paid-provider behavior still require host-specific verification. See [v1.0.0 release notes](docs/RELEASE_NOTES_v1.0.0.md) for accepted limits.
 
-The planning documents live in `docs/`. `.ai/` records current implementation state and engineer handoffs. The source is distributed under the [MIT License](LICENSE).
+The roadmap is complete through Phase 8. Current status is in [.ai/CURRENT_STATE.md](.ai/CURRENT_STATE.md); architecture, testing and other engineering guides are in [docs/](docs/). Licensed under [MIT](LICENSE).

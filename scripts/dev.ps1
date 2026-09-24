@@ -33,7 +33,7 @@ try {
     }
     Write-Host 'PostgreSQL is healthy on localhost:5432.'
     if ((Test-Path -LiteralPath 'backend/app/main.py') -and (Test-Path -LiteralPath 'frontend/package.json')) {
-        Write-Host 'Start the backend from backend/: uvicorn app.main:app --reload'
+        Write-Host 'Start the backend from backend/: uvicorn app.main:app --reload --no-proxy-headers'
         Write-Host 'Start the frontend from frontend/: npm run dev'
     } else {
         Write-Host 'Backend and frontend will be scaffolded in later roadmap phases.'

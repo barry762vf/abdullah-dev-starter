@@ -11,11 +11,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings
 from app.core.exceptions import AppException
 from app.core.security import (
+    REFRESH_TOKEN_DAYS,
     create_access_token,
     hash_password,
+    hash_password_async,
     new_refresh_token,
     refresh_digest,
-    verify_password,
+    verify_password_async,
 )
 from app.models import AuditLog, RefreshToken, Role, User, UserRole
 from app.schemas.auth import LoginRequest, RegisterRequest
@@ -44,11 +46,8 @@ async def register(db: AsyncSession, data: RegisterRequest, ip: str | None, agen
     role = await db.scalar(select(Role).where(Role.name == "user"))
     if role is None:
         raise AppException(503, "Service Unavailable", "Registration is not configured.")
-    user = User(
-        email=str(data.email),
-        hashed_password=hash_password(data.password),
-        full_name=data.full_name,
-    )
+    hashed_password = await hash_password_async(data.password)
+    user = User(email=str(data.email), hashed_password=hashed_password, full_name=data.full_name)
     try:
         db.add(user)
         await db.flush()
@@ -72,7 +71,7 @@ async def login(
     db: AsyncSession, data: LoginRequest, settings: Settings, ip: str | None, agent: str | None
 ):
     user = await db.scalar(select(User).where(func.lower(User.email) == str(data.email)))
-    password_matches = verify_password(
+    password_matches = await verify_password_async(
         data.password, user.hashed_password if user else _DUMMY_PASSWORD_HASH
     )
     if user is None or not password_matches or not user.is_active:
@@ -84,7 +83,7 @@ async def login(
         RefreshToken(
             user_id=user.id,
             token_hash=refresh_digest(raw),
-            expires_at=datetime.now(UTC) + timedelta(days=14),
+            expires_at=datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_DAYS),
         )
     )
     add_audit(db, "auth.login", user.id, ip, agent)
@@ -140,7 +139,7 @@ async def refresh(
         RefreshToken(
             user_id=user.id,
             token_hash=refresh_digest(successor),
-            expires_at=datetime.now(UTC) + timedelta(days=14),
+            expires_at=datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_DAYS),
         )
     )
     add_audit(db, "auth.refresh", user.id, ip, agent)

@@ -54,9 +54,9 @@ sequenceDiagram
 
 1. **HTTP-Only, Secure, SameSite Cookies:**
    - By default for web browsers, tokens are set in cookies with:
-     - `HttpOnly = True`: JavaScript cannot read the token (eliminates XSS token theft).
+     - `HttpOnly = True`: JavaScript cannot directly read the token, though XSS can still send authenticated requests.
      - `Secure = True`: Transmitted exclusively over HTTPS (disabled only on local `localhost`).
-     - `SameSite = 'Lax'`: Protects against Cross-Site Request Forgery (CSRF).
+     - `SameSite = 'Lax'`: Restricts cross-site cookie sending; the custom request header and exact CORS allowlist additionally protect cookie-authenticated mutations.
 2. **Dual-Mode Authorization (Header Fallback):**
    - For external mobile clients (e.g. Abdullah's React Native or Android apps) or CLI tools, the API also accepts standard `Authorization: Bearer <token>` headers.
 3. **Password Hashing Standard:**
@@ -78,6 +78,23 @@ sequenceDiagram
 - `GET /api/v1/users/me` returns the current profile. `PATCH /api/v1/users/me` updates only `full_name` and requires the same custom header when authenticated by cookie. `Authorization: Bearer <access JWT>` is supported on protected routes, including PATCH; refresh and logout use the HttpOnly refresh cookie.
 - Access JWTs contain `sub`, `type`, `iat`, and `exp`; no role claims are issued. Current roles are loaded from PostgreSQL. A `superadmin` role satisfies any role guard; other roles must be explicitly allowed. The API does not expose admin-management routes until Phase 5.
 - Run `python -m app.core.seed` from `backend/` to seed roles. To create the first superadmin, temporarily provide a valid `INITIAL_ADMIN_EMAIL` and a unique 12–128-character `INITIAL_ADMIN_PASSWORD`, then run `python -m app.core.seed --bootstrap-admin`. The command uses a PostgreSQL transaction lock and never resets an existing superadmin. Remove the bootstrap password afterward; ordinary application startup does not require it.
+
+### Browser refresh coordination contract (Phase 4 implementation requirement)
+
+The approved backend has **no refresh grace window**. Two uses of the same rotated refresh cookie cause known-reuse revocation, including the newly issued session. A response lost after commit can leave the browser with the old cookie and also force re-login. The Phase 4 client must implement the following contract before wiring its Axios interceptor or `AuthGuard`:
+
+1. Use a single in-tab promise for all requests that encounter an expired access cookie. Exclude `/auth/login`, `/auth/refresh`, and `/auth/logout` from automatic 401 interception, and retry an original request at most once. Send `X-Requested-With: XMLHttpRequest` on every API request; the browser never reads the HttpOnly tokens.
+2. Serialize browser session mutations across tabs on the **same frontend origin** with `navigator.locks.request("abdullah-auth-session", async () => ...)`. Use this lock for refresh and logout, and for login when it replaces a session. Hold it until the response and cookies have been processed. The same-origin production topology below ensures tabs share the lock and cookie jar.
+3. After acquiring the lock for a 401, call `GET /api/v1/users/me` first. If it succeeds, another tab already refreshed; release the lock and retry the original request once. If it returns 401, call `POST /api/v1/auth/refresh` **once** with the custom header, then release the lock and retry the original request once after success. Do not replay the original mutation merely to test whether another tab refreshed.
+4. Use `BroadcastChannel` only for non-secret state signals (`auth-updated`, `signed-out`). A successful refresh/login broadcasts `auth-updated`; receivers re-fetch `/users/me`. Logout runs under the same lock, clears client user/query caches, then broadcasts `signed-out`; other tabs clear their caches and stop queued retries without calling logout or refresh again. Maintain an in-memory auth generation in each tab; after acquiring the lock, a queued refresh must abort if it observed a sign-out while waiting. Browser cookies are shared automatically.
+5. A refresh 401 means re-login is required; clear client state and broadcast `signed-out`. On a network error or timeout, the server may already have committed rotation: **never automatically retry `/auth/refresh`**. On recovery, one `/users/me` probe may confirm a received new access cookie; if that fails, require a fresh login. Do not broadcast a global sign-out for an ambiguous network error alone.
+6. Web Locks provides the cross-tab exclusion. BroadcastChannel does not. If Web Locks is unavailable, do not invent a racing localStorage lease or automatic cross-tab refresh. The safe fallback is in-tab single-flight plus re-login when access expires; a cloned project may add a separately tested coordination mechanism. No access or refresh token belongs in localStorage, sessionStorage, BroadcastChannel, or application state.
+
+On initial page load, discover the session with `GET /users/me`; use its roles for UI display only. The backend remains authoritative. A logout does not invalidate an already issued access JWT carried as a Bearer header; it may remain valid for up to 15 minutes, so every tab must clear its in-memory user data and caches.
+
+### Browser-facing origin (ADR 011)
+
+The starter's production browser calls use relative `/api/v1/...` on the Cloudflare Pages hostname. A Pages `/api/*` edge route forwards to FastAPI on Railway, preserving cookie paths and separate `Set-Cookie` headers. The browser therefore sees one origin and can send host-only Secure, HttpOnly, SameSite=Lax cookies without credentialed cross-origin fetch. Local Vite uses an `/api` development proxy to keep the same browser URL shape. The edge route and its live cookie behavior must be built and tested before deployment. A project using separate same-site custom subdomains may choose that variant deliberately, with exact credentialed CORS and sibling-domain cookie review. See `docs/DEPLOYMENT_STRATEGY.md` for the deployment gates.
 
 ---
 
@@ -135,4 +152,6 @@ async def list_users(
 
 Phase 3 records registration, successful and failed login, refresh, known refresh reuse, logout, and bootstrap events. Password changes, role elevations, and account suspensions belong to later account-management phases.
 
-The current rate limiter enforces login 5/minute/IP and registration 3/hour/IP in one application process, using only `request.client.host`. It never parses arbitrary `X-Forwarded-For` headers. Direct development requests use the socket peer IP. At deployment, Uvicorn must be configured with the exact trusted reverse-proxy IPs (`--forwarded-allow-ips`) and the proxy must strip untrusted forwarding headers. Multi-worker or multi-instance deployments need a shared limiter before claiming global enforcement; that deployment task is tracked in `.ai/TODO.md`.
+The current rate limiter attempts login 5/minute/IP and registration 3/hour/IP within one process using `request.client.host`; it is a starter-level abuse control, not a distributed anti-bot boundary. The app does not parse `X-Forwarded-For`, but Uvicorn can rewrite `client.host` before the app sees it: Uvicorn 0.34.2 defaults to proxy headers enabled and trusts `127.0.0.1`. Local direct development must run with `--no-proxy-headers`. A production reverse proxy must overwrite untrusted forwarding headers, and Uvicorn must use `--proxy-headers --forwarded-allow-ips=<exact trusted ingress IPs>`; never use `*` for an internet-reachable service. If exact ingress addresses cannot be established, do not claim the in-process per-IP limit or audit IP is client-accurate; provide edge/shared limiting before public deployment. The 4,096-key in-process cap can evict an active bucket during IP churn, IPv6 clients can rotate addresses, and there is no per-account throttle. These limitations and multi-worker enforcement remain Phase 7 deployment work.
+
+Registration intentionally returns 409 for an existing email. Browser login and registration send JSON, not HTML forms; FastAPI currently rejects form and `text/plain` bodies for these routes. Refresh and logout require cookies even for non-browser clients; Bearer fallback applies to access-token protected routes only.

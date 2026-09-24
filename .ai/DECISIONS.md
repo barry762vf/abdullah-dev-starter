@@ -130,3 +130,24 @@ This file contains permanent records of all major technical and architectural de
 - **Context:** Phase 3 needs an initial administrator without leaving a permanent bootstrap secret, and IP-based auth limits cannot safely trust arbitrary forwarded headers.
 - **Decision:** Keep `python -m app.core.seed` as roles-only. The `--bootstrap-admin` option runs only when explicitly invoked, rejects blank/sample credentials, serializes first-admin creation with a PostgreSQL transaction advisory lock, and never changes an existing superadmin. Normal application startup no longer requires `INITIAL_ADMIN_PASSWORD`. Access JWTs contain identity and lifetime claims only; `superadmin` satisfies reusable role guards through current database membership. The current 5/minute login and 3/hour registration limits use the ASGI resolved peer IP and a bounded in-process store. Cookie-authenticated mutations require `X-Requested-With: XMLHttpRequest` and use the explicit CORS allowlist.
 - **Consequences:** Provisioners remove the bootstrap password after first use. Deployments must configure Uvicorn with exact trusted proxy addresses and strip untrusted forwarding headers. The in-process limiter is effective for a single worker but is not a global limit across workers or instances; a shared limiter is a deployment follow-up. No Phase 5 account-management endpoints or frontend auth behavior are introduced here.
+
+---
+
+## ADR 011: Same-origin browser API and serialized refresh contract
+
+- **Date:** 2026-09-24
+- **Status:** Accepted; Phase 4 implementation pending
+- **Context:** The independent Phase 3 audit confirmed that concurrent browser refreshes trigger ADR 009's known-reuse revocation. It also confirmed that an unrelated Cloudflare Pages host calling a Railway host cannot send the approved SameSite=Lax cookies on API fetches (BUG-008).
+- **Decision:** Keep strict backend rotation and SameSite=Lax. The starter's browser-facing production topology is one origin: Cloudflare Pages serves the SPA and routes `/api/*` to FastAPI on Railway through a Pages Function or equivalent same-origin edge proxy. The frontend uses relative `/api/v1` URLs, with a Vite `/api` proxy locally. Phase 4 must use in-tab single-flight plus a same-origin Web Lock to serialize refresh and logout across tabs; under the lock it probes `/users/me` before attempting one refresh. BroadcastChannel carries non-secret auth state signals only. A lost refresh response is never automatically retried. Browsers without Web Locks require re-login rather than unsafe cross-tab automatic refresh.
+- **Alternatives considered:** Same-site `app.example.com` and `api.example.com` custom subdomains would keep Lax cookies but require exact credentialed CORS and careful sibling-subdomain cookie handling. `SameSite=None` and server-side replay grace were rejected because they weaken the approved security boundary. A same-origin proxy adds a small edge route but keeps host-only cookies, avoids production browser CORS, and makes the starter's API base URL portable.
+- **Consequences:** Phase 4 may implement the frontend contract but must not store tokens in JavaScript storage. Phase 4/7 must implement and test the edge proxy, cookie forwarding, no-cache behavior, and domain configuration before deployment. BUG-008 is resolved as an architecture decision, not as a deployed system.
+
+---
+
+## ADR 012: Explicit runtime mode and bounded password work
+
+- **Date:** 2026-09-24
+- **Status:** Accepted
+- **Context:** The Phase 3 audit reproduced event-loop stalls during Argon2 operations and found that a missing `ENVIRONMENT` silently selected `development`, bypassing production guards. Uvicorn's default loopback proxy trust also changes the client IP seen by the app.
+- **Decision:** Require `ENVIRONMENT` explicitly; the local template and tests set `development`, while deployment must set and verify `production`. Run request-time password hashing and verification and explicit admin bootstrap hashing in AnyIO worker threads under a dedicated two-operation capacity limiter without reducing Argon2 parameters. Direct local Uvicorn commands use `--no-proxy-headers`; reverse-proxy trust is configured at deployment using exact ingress addresses and header overwriting, with a deployed IP smoke test.
+- **Consequences:** Missing mode fails startup. Copying a development `.env` into production remains an operator error, so deployment automation must assert the production mode and security settings. The limiter is per backend process; shared/edge abuse controls and verified proxy topology remain Phase 7 requirements.

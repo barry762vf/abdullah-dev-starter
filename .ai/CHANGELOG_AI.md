@@ -10,6 +10,16 @@ This file tracks every AI agent session, modified files, verification performed,
 
 ## 📋 Session Log
 
+### 🔹 2026-09-24: Independent Phase 3 security audit closure
+- **Agent Role / ID:** Codex (Primary Implementation Engineer)
+- **Primary Goal:** Verify Claude's Phase 3 authentication audit independently and address pre-Phase-4 security findings without implementing the frontend.
+- **Audit:** Preserved `.ai/REVIEW_PHASE3_AUTH_CLAUDE.md` unchanged and recorded finding-by-finding evidence, decisions, and LOW dispositions in `.ai/REVIEW_PHASE3_AUTH_CODEX.md`. Both HIGH findings and four MEDIUM findings were confirmed; HIGH-01 remains an intentional strict-replay tradeoff under ADR 009, while HIGH-02 is resolved as a same-origin architecture decision under ADR 011.
+- **Implementation:** Bounded AnyIO worker offload for registration/login/bootstrap Argon2 work; required explicit `ENVIRONMENT`; unified access/refresh duration constants; local Uvicorn `--no-proxy-headers`; 422 tests for non-JSON public auth requests. Documented browser Web Locks/single-flight refresh contract, same-origin Pages `/api/*` to Railway topology, trusted ingress gate, and local limiter limits. ADRs 011 and 012 record the decisions.
+- **Files Added:** Original Claude audit and Codex verification report under `.ai/`.
+- **Files Changed:** `backend/app/core/{config,security,seed}.py`, `backend/app/services/auth_service.py`, three test modules, `.env.example`, `README.md`, `scripts/dev.{ps1,sh}`, `docs/{AUTH_STRATEGY,DEPLOYMENT_STRATEGY,SECURITY_BASELINE}.md`, ADRs and `.ai/` state, and the durable Second Brain handoff.
+- **Verification:** Dedicated guarded Docker PostgreSQL test database only; `pytest -q --tb=short` passed **43 tests**, and focused `pytest -q tests/integration/test_auth.py --tb=short` passed **9 tests**. `ruff check .`, `ruff format --check .`, `pip check`, guarded Alembic drift check, PowerShell parse, and Bash `-n` all passed. Independent Uvicorn forwarded-header and limiter key-churn probes reproduced MEDIUM-02/03. The normal development schema was not changed.
+- **Remaining risk and next task:** BUG-009/010 track production proxy trust and shared/edge plus account-aware limiting. Phase 4 is now the next implementation task: frontend shell and bilingual engine, with relative `/api/v1`, a Vite proxy, and the documented browser refresh contract. The Pages edge proxy must be implemented/tested before public deployment. No Phase 4 code was added here.
+
 ### 🔹 2026-09-24: Phase 3 authentication and RBAC
 - **Agent Role / ID:** Codex (Primary Implementation Engineer)
 - **Primary Goal:** Implement Phase 3 only on the hardened Phase 0–2 foundation.

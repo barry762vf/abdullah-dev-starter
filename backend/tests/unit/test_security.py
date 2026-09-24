@@ -1,11 +1,13 @@
 """Cryptographic boundary checks."""
 
+import threading
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import jwt
 import pytest
 
+from app.core import security
 from app.core.config import Settings
 from app.core.security import (
     create_access_token,
@@ -76,3 +78,24 @@ def test_refresh_token_is_opaque_and_digest_only() -> None:
     assert len(first) >= 40
     assert len(refresh_digest(first)) == 64
     assert first not in refresh_digest(first)
+
+
+@pytest.mark.asyncio
+async def test_password_work_is_offloaded_from_event_loop(monkeypatch: pytest.MonkeyPatch) -> None:
+    loop_thread = threading.get_ident()
+    worker_threads: list[int] = []
+
+    def fake_hash(password: str) -> str:
+        worker_threads.append(threading.get_ident())
+        return f"hash:{password}"
+
+    def fake_verify(password: str, hashed: str) -> bool:
+        worker_threads.append(threading.get_ident())
+        return hashed == f"hash:{password}"
+
+    monkeypatch.setattr(security, "hash_password", fake_hash)
+    monkeypatch.setattr(security, "verify_password", fake_verify)
+    hashed = await security.hash_password_async("test-password")
+    assert await security.verify_password_async("test-password", hashed)
+    assert len(worker_threads) == 2
+    assert all(thread != loop_thread for thread in worker_threads)

@@ -25,7 +25,7 @@ cd "$project_root"
 docker compose up -d --wait db
 echo 'PostgreSQL is healthy on localhost:5432.'
 if [[ -f backend/app/main.py && -f frontend/package.json ]]; then
-  echo 'Start the backend from backend/: uvicorn app.main:app --reload'
+  echo 'Start the backend from backend/: uvicorn app.main:app --reload --no-proxy-headers'
   echo 'Start the frontend from frontend/: npm run dev'
 else
   echo 'Backend and frontend will be scaffolded in later roadmap phases.'

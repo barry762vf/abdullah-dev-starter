@@ -72,8 +72,39 @@
 
 ---
 
+## 🔍 Phase 3 Security Review Follow-ups (`.ai/REVIEW_PHASE3_AUTH_CLAUDE.md`)
+Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's independent classifications and dispositions are recorded in `.ai/REVIEW_PHASE3_AUTH_CODEX.md`; Claude's original report is preserved.
+
+**Before browser auth integration (Phase 4):**
+- [x] HIGH-01: Verify the concurrent-refresh behavior and define the Web Locks/BroadcastChannel browser contract in `docs/AUTH_STRATEGY.md`, preserving ADR 009's strict reuse rule.
+- [x] HIGH-02: Choose the same-origin `/api/*` proxy topology in ADR 011 and deployment/auth docs; resolve BUG-008 at the architecture level.
+
+**Before any public deployment:**
+- [x] MEDIUM-01: Offload Argon2 hashing/verification for registration, login and bootstrap to a bounded AnyIO worker pool; retain the dummy-hash path.
+- [x] MEDIUM-02 checkpoint: Confirm Uvicorn default forwarding behavior, pin `--no-proxy-headers` for local direct startup, and document exact production proxy requirements. Live ingress configuration remains Phase 7.
+- [ ] MEDIUM-03 deployment extension: Add shared/edge and account-aware abuse controls before claiming production resistance to IP rotation, IPv6 churn or the bounded-store eviction; keep the current starter limiter as best effort.
+- [x] MEDIUM-04: Require explicit `ENVIRONMENT` and test missing-mode startup failure.
+
+**Test hardening:**
+- [x] Verify login/register reject `text/plain` and form bodies with 422.
+- [ ] Add remaining regression tests in the relevant phase: JWT `alg:none`/HS512/missing claims/non-UUID `sub`/deleted user; ignored `roles` claim; cookie `Path`/`Max-Age`/`Secure`; bootstrap advisory-lock race; disabled user at refresh revokes all sessions; route inventory (all non-public routes use `get_current_active_user`); failure after the conditional UPDATE leaves the old token valid; log redaction on reuse/bootstrap paths; a barrier-based true refresh race.
+
+**Low-priority hardening:**
+- [x] LOW-01 documentation: Access JWTs remain valid ≤15 min after logout/reuse; Phase 4 clears client caches. Consider `users.sessions_invalid_before` with password reset later.
+- [ ] LOW-02/03 operations: Bootstrap-before-registration is documented; printing created/skipped outcome and disabled-admin recovery remain.
+- [ ] LOW-04: Make `get_current_user` private or clearly documented as not checking `is_active`.
+- [ ] LOW-05: Add fixed audit `reason` codes, audit refresh denial for inactive accounts, strip control characters from stored user agents.
+- [x] LOW-06: Use `ACCESS_TOKEN_MINUTES`/`REFRESH_TOKEN_DAYS` constants for JWT/database expiry and cookies.
+- [ ] LOW-07: Consider `check_needs_rehash` on login and NFKC password normalization (before real users exist).
+- [x] LOW-08/10/11: Test JSON-only auth requests and document registration's 409 account enumeration and cookie-only refresh for non-browser clients.
+- [x] LOW-09 architecture: Choose same-origin host-only cookies in ADR 011; same-site subdomain overrides must address sibling-subdomain cookie behavior.
+
+---
+
 ## 🎨 Phase 4: Frontend Shell, Modern UI & Bilingual Engine (RTL / LTR)
-- [ ] Choose same-site SPA/API hostnames or a same-origin proxy before wiring browser cookie auth (BUG-008).
+- [x] Choose one-origin SPA/API topology in ADR 011 before wiring browser cookie auth (BUG-008 resolved at architecture level).
+- [ ] Implement the `docs/AUTH_STRATEGY.md` browser refresh contract: in-tab single-flight, Web Lock across tabs, `/users/me` probe, non-secret BroadcastChannel signals, no refresh retry after ambiguous failure, and logout cache clearing.
+- [ ] Use a relative `/api/v1` client URL and Vite `/api/*` development proxy; plan and test the production same-origin edge route before deployment.
 - [ ] Scaffold `frontend/` with React, Vite, and TypeScript.
 - [ ] Configure Tailwind CSS with RTL logical properties and Cairo + Inter fonts.
 - [ ] Set up `i18next` with Arabic (`locales/ar/translation.json`) and English (`locales/en/translation.json`).
@@ -106,6 +137,8 @@
 
 ## 🚢 Phase 7: Production Containerization & CI/CD
 - [ ] Configure exact trusted proxy IPs, strip untrusted forwarding headers, and add a shared auth rate limiter before multi-worker or multi-instance deployment.
+- [ ] Verify the production Pages `/api/*` proxy preserves paths, methods, cookies and `Set-Cookie`, avoids API caching, and records the real client IP only through a trusted ingress; otherwise use edge rate limiting and mark app IP audit as proxy-derived.
+- [ ] Assert `ENVIRONMENT=production`, strong secret, secure cookies, HTTPS origin and debug off in deployment automation; do not deploy an unchanged local `.env`.
 - [ ] Write multi-stage, non-root `backend/Dockerfile`.
 - [ ] Write multi-stage Nginx `frontend/Dockerfile`.
 - [ ] Configure GitHub Actions workflow `backend-ci.yml`.

@@ -309,6 +309,23 @@ async def test_rate_limits(auth_env):
 
 
 @pytest.mark.asyncio
+async def test_public_auth_routes_reject_form_and_plain_text(auth_env):
+    client, _, _ = auth_env
+    for path in ("/api/v1/auth/register", "/api/v1/auth/login"):
+        plain = await client.post(
+            path,
+            content='{"email":"person@example.com","password":"Test-password-123!"}',
+            headers={"Content-Type": "text/plain"},
+        )
+        form = await client.post(
+            path,
+            data={"email": "person@example.com", "password": PASSWORD, "full_name": "Person"},
+        )
+        assert plain.status_code == 422
+        assert form.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_concurrent_refresh_consumes_token_once(test_database_url: str):
     """Use independent connections to exercise PostgreSQL's conditional row update."""
     engine = create_async_engine(test_database_url, hide_parameters=True)

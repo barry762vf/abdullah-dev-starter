@@ -14,12 +14,14 @@ ADR 009 defines the Phase 3 security boundary: protected requests check current 
 
 Phase 3 implements that boundary with Argon2id passwords, 15-minute signed access tokens, and 14-day rotating opaque refresh tokens. First-superadmin provisioning is an explicit one-time command; no bootstrap password must remain configured. ADR 010 records the transaction lock, database-current role guards, and scoped authentication limits.
 
-The approved SameSite=Lax cookie model requires same-site SPA and API hosts or a same-origin proxy. Default Cloudflare Pages and Railway hostnames are cross-site. This must be resolved before browser auth integration; a shared limiter and trusted proxy settings are needed when deployment scales beyond one backend process.
+The independent Phase 3 security audit confirmed that strict one-use refresh rotation can revoke a session when tabs race; the browser must serialize refresh using a shared Web Lock and avoid replay after an ambiguous network failure. ADR 011 chooses one browser-facing origin: Cloudflare Pages will proxy `/api/*` to Railway while the SPA uses relative API URLs. This settles the SameSite=Lax architecture decision before Phase 4 browser work, though the edge route is not deployed yet.
+
+ADR 012 makes runtime mode explicit and moves costly Argon2 work to a bounded worker pool. Production remains gated on verifying the proxy's forwarded IP trust and adding stronger shared or edge abuse controls; the existing per-process IP limiter is a starter control.
 
 ## Verification milestone
 
-Docker Compose started PostgreSQL 16. The isolated test database passed migration round-trips and drift checks; Phase 3's concurrent refresh test confirmed one-time consumption. The full backend suite passed 40 tests.
+Docker Compose started PostgreSQL 16. The isolated test database passed migration round-trips and drift checks; Phase 3's concurrent refresh test confirmed one-time consumption. After the security audit fixes, the full backend suite passed 43 tests with Ruff, dependency and schema-drift checks passing.
 
 ## Next direction
 
-Implement Phase 4 frontend shell and bilingual RTL/LTR behavior, choosing the browser/API domain arrangement before connecting authentication. The current task state is in `.ai/AGENT_HANDOFF.md` and `.ai/CURRENT_STATE.md`.
+Implement Phase 4 frontend shell and bilingual RTL/LTR behavior, following the browser refresh contract and same-origin API topology. Build and verify the edge proxy before deployment; resolve the remaining production ingress and rate-limit gates in Phase 7. The current task state is in `.ai/AGENT_HANDOFF.md` and `.ai/CURRENT_STATE.md`.

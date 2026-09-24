@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import create_engine, create_session_factory
-from app.core.security import hash_password
+from app.core.security import hash_password_async
 from app.models import AuditLog, Role, User, UserRole
 
 DEFAULT_ROLES = (
@@ -55,7 +55,8 @@ async def bootstrap_superadmin(session: AsyncSession, settings: Settings) -> boo
     if role is None:
         raise ValueError("The superadmin role must be seeded before bootstrap")
     try:
-        user = User(email=email, hashed_password=hash_password(password), full_name="Administrator")
+        hashed_password = await hash_password_async(password)
+        user = User(email=email, hashed_password=hashed_password, full_name="Administrator")
         session.add(user)
         await session.flush()
         session.add(UserRole(user_id=user.id, role_id=role.id))

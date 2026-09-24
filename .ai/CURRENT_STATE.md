@@ -11,14 +11,14 @@
 
 | Metric | Status | Details |
 | :--- | :--- | :--- |
-| **Active Roadmap Phase** | **Phase 3 complete; Phase 4 next** | Phases 0–3 are implemented and verified; no frontend work started. |
+| **Active Roadmap Phase** | **Phase 3 security audit closed; Phase 4 next** | Phases 0–3 are implemented and verified. The Phase 3 independent audit has a documented browser contract and tracked production gates; no frontend work started. |
 | **Backend State** | Authentication and RBAC foundation complete | Argon2id, JWT access cookies/Bearer fallback, rotating opaque refresh tokens, current database role guards, explicit admin bootstrap, auth audit, and scoped rate limits. |
 | **Frontend State** | Not Started | Directory structure, styling, and bidi strategy specified. |
 | **Database State** | Revisions 001 and 002 verified | Docker PostgreSQL healthy; `abdullah_core_test` passed explicit upgrade, downgrade to base, re-upgrade, Alembic drift check, and new regressions. Development schema was not changed. |
 | **Authentication** | Phase 3 implemented | Registration, login, refresh, logout, and self profile routes pass live PostgreSQL tests. Known reuse revokes active sessions; unknown/expired tokens do not. |
-| **Test Suite** | Phase 3 tests passing | 40 backend tests pass, including independent-connection refresh race; Ruff lint/format, dependency check, and Alembic drift check pass. |
+| **Test Suite** | Audit fixes verified | 43 backend tests pass, including independent-connection refresh race, explicit environment validation, Argon2 worker offload, and JSON-only auth requests; Ruff lint/format, dependency check, and Alembic drift check pass. |
 | **Documentation** | Foundation guide complete | Engineering guides are in `docs/`; root `README.md` and `LICENSE` are present. |
-| **Active Blockers** | None for Phase 3 | BUG-008 records a Phase 4/7 cross-site cookie deployment constraint; shared rate limiting and trusted proxy configuration are deployment follow-ups. |
+| **Active Blockers** | None for Phase 4 local integration | ADR 011 chooses a same-origin `/api/*` topology and browser refresh contract. Production remains gated on implementing/verifying the edge proxy, trusted ingress and client IP, and stronger shared/edge abuse controls (BUG-009/010). |
 
 ---
 
@@ -42,9 +42,12 @@
 - ✅ Reverified the dedicated test database with explicit Alembic upgrade → downgrade base → re-upgrade → check, 30 pytest tests, Ruff and dependency checks.
 - ✅ Implemented Phase 3 authentication and RBAC with Argon2id, signed access tokens, opaque refresh rotation, explicit first-superadmin bootstrap, audit events, and current database role checks.
 - ✅ Verified 40 backend tests against the dedicated PostgreSQL test database, Ruff lint/format, dependency integrity, and Alembic drift. The normal development schema was not changed.
+- ✅ Independently verified Claude's Phase 3 audit: both HIGH findings and all four MEDIUM findings have explicit dispositions in `.ai/REVIEW_PHASE3_AUTH_CODEX.md`; the original audit is preserved.
+- ✅ Offloaded Argon2 work to a bounded worker pool, made `ENVIRONMENT` mandatory, disabled local Uvicorn proxy-header trust, chose the same-origin browser topology and documented cross-tab refresh behavior in ADRs 011–012.
+- ✅ Verified 43 backend tests against the dedicated PostgreSQL test database, Ruff lint/format, dependency integrity, and Alembic drift after the audit changes. The normal development schema was not changed.
 
 ---
 
 ## 3. Immediate Focus (Next Up)
 
-The exact next task is **Phase 4 frontend shell and bilingual engine** from `docs/DEVELOPMENT_ROADMAP.md`. Before connecting browser auth, settle same-site SPA/API hostnames or a same-origin proxy for the approved `SameSite=Lax` cookies (BUG-008). Do not assume default Cloudflare Pages and Railway domains can exchange those cookies.
+The exact next task is **Phase 4 frontend shell and bilingual engine** from `docs/DEVELOPMENT_ROADMAP.md`, using relative `/api/v1`, a local Vite `/api` proxy, and the browser refresh contract in `docs/AUTH_STRATEGY.md`. Implement and test the production Pages `/api/*` proxy before deployment. BUG-009/010 remain production hardening gates; do not claim deployed auth safety or real client-IP accuracy before those live checks pass.

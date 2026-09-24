@@ -5,6 +5,7 @@ import secrets
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
+import anyio
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
@@ -16,6 +17,9 @@ REFRESH_TOKEN_DAYS = 14
 ACCESS_COOKIE = "access_token"
 REFRESH_COOKIE = "refresh_token"
 _hasher = PasswordHasher()
+# Each Argon2 operation uses substantial memory. Limit this work independently
+# of AnyIO's general-purpose worker pool so auth bursts cannot spawn 40 hashes.
+_password_limiter = anyio.CapacityLimiter(2)
 
 
 def hash_password(password: str) -> str:
@@ -29,10 +33,25 @@ def verify_password(password: str, hashed_password: str) -> bool:
         return False
 
 
+async def hash_password_async(password: str) -> str:
+    return await anyio.to_thread.run_sync(hash_password, password, limiter=_password_limiter)
+
+
+async def verify_password_async(password: str, hashed_password: str) -> bool:
+    return await anyio.to_thread.run_sync(
+        verify_password, password, hashed_password, limiter=_password_limiter
+    )
+
+
 def create_access_token(user_id: UUID, settings: Settings) -> str:
     now = datetime.now(UTC)
     return jwt.encode(
-        {"sub": str(user_id), "type": "access", "iat": now, "exp": now + timedelta(minutes=15)},
+        {
+            "sub": str(user_id),
+            "type": "access",
+            "iat": now,
+            "exp": now + timedelta(minutes=ACCESS_TOKEN_MINUTES),
+        },
         settings.secret_key.get_secret_value(),
         algorithm="HS256",
     )

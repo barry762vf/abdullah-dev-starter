@@ -1,39 +1,39 @@
-# AI Agent Handoff — Phase 3 complete
+# AI Agent Handoff — Phase 3 security audit closed
 
 > From: Codex (Primary Implementation Engineer)
 > Date: 2026-09-24
-> Status: Phases 0–3 complete; Phase 4 next.
+> Status: Phases 0–3 complete and Phase 3 independently audited; Phase 4 is next. No Phase 4 code was added in this task.
 
-## Foundation and Git
+## Starting point and audit
 
-Phases 0–2 and pre-Phase-3 hardening were verified before this work. Docker Engine 29.8.0 and PostgreSQL 16 were operational. All destructive migration tests and Phase 3 integration data used only the guarded `abdullah_core_test` database; the normal development schema was not changed. Local `main` started clean at `b91412d`, tracking `origin/main` at `https://github.com/barry762vf/abdullah-dev-starter.git`. Phase 3 is a separate commit; see Git log for its final hash and remote state.
+Local `main` started clean at `9a6d65a`, tracking `origin/main` at `https://github.com/barry762vf/abdullah-dev-starter.git`, apart from Claude's pre-existing uncommitted `.ai/TODO.md` edit and untracked `.ai/REVIEW_PHASE3_AUTH_CLAUDE.md`. The original review was preserved unchanged. `.ai/REVIEW_PHASE3_AUTH_CODEX.md` records independent evidence and dispositions for both HIGH, four MEDIUM, and all LOW findings. ADR 009's strict known-reuse revocation remains in force: a concurrent refresh can revoke the successor. The Phase 3 live two-connection test verifies that behavior.
 
-## Phase 3 implementation
+## Findings closed for Phase 4
 
-- Registration normalizes email, validates a 12–128-character password, assigns only the seeded `user` role, and maps duplicate-email races to `409`. Missing baseline role returns `503`. Profiles exclude password hashes.
-- Login verifies Argon2id and issues a 15-minute HS256 JWT with only `sub`, `type`, `iat`, and `exp`. Access is carried by HttpOnly cookie or Bearer header. Each protected request loads the account and current roles from PostgreSQL, so disabling an account or removing a role takes effect immediately.
-- Refresh uses a 14-day opaque token from `secrets.token_urlsafe(32)` and stores only its SHA-256 digest. A conditional PostgreSQL `UPDATE ... RETURNING` atomically consumes it; successor and audit event commit before cookies are returned. Unknown and expired input return `401` without mass revocation. Known revoked-token reuse revokes remaining sessions for that user. Concurrent use can force re-login; there is no grace window.
-- Logout revokes only the presented refresh session and clears both cookies. Cookie mutations require `X-Requested-With: XMLHttpRequest`. SameSite=Lax and explicit CORS origins are retained.
-- `get_current_user`, `get_current_active_user`, and `require_role` use explicitly loaded relationships. Current `superadmin` membership satisfies any role guard. No Phase 5 admin-management route was added.
-- `python -m app.core.seed` remains roles-only. `python -m app.core.seed --bootstrap-admin` explicitly creates the first superadmin with Argon2id under a transaction advisory lock. It rejects blank/sample credentials, does not reset an existing administrator, and allows removal of `INITIAL_ADMIN_PASSWORD` afterward. The environment template has no administrator default.
-- Audit records registration, successful/failed login, refresh, known reuse, logout, and bootstrap without credentials or token digests. Login is limited to 5/minute/IP and registration to 3/hour/IP using the ASGI resolved peer IP in a bounded per-process store. Arbitrary forwarded headers are ignored.
+- HIGH-01: Phase 4 browser clients must follow `docs/AUTH_STRATEGY.md`: one in-tab refresh promise, same-origin Web Lock across tabs for refresh/login/logout, `/users/me` probe under the lock, one refresh at most, state-only BroadcastChannel messages, and re-login after ambiguous refresh failure. No token storage in JavaScript.
+- HIGH-02 / BUG-008: ADR 011 selects a single browser-facing origin. Cloudflare Pages will proxy `/api/*` to Railway; browser clients use relative `/api/v1`, and local Vite uses an `/api` proxy. The production edge route is designed, not implemented or deployed.
+- MEDIUM-01 / BUG-012: Argon2 hash and verify calls in registration, login (including dummy hash), and administrator bootstrap now use bounded AnyIO worker threads.
+- MEDIUM-02 / BUG-009: Local Uvicorn launch instructions disable proxy-header rewriting. The production ingress trust, header overwrite, direct bypass prevention, and live audit-IP test remain a Phase 7 gate.
+- MEDIUM-03 / BUG-010: The 4,096-key, per-process IP limiter is only a starter control; key churn and IPv6 rotation can bypass it. Shared or edge and account-aware abuse controls remain a public-deployment gate.
+- MEDIUM-04 / BUG-011: `ENVIRONMENT` is mandatory. The local template explicitly sets development; deployment must assert production and all security settings.
 
 ## Files and decisions
 
-Added `backend/app/core/{security,rate_limit}.py`, `backend/app/api/deps.py`, `backend/app/api/v1/{auth,users}.py`, `backend/app/schemas/*`, `backend/app/services/*`, and auth unit/integration tests. Changed seed/config/app/router/dependencies, `.env.example`, README, auth/security/database/deployment docs, and `.ai/` state. ADR 010 records explicit bootstrap, role guard behavior, and scoped rate-limit/proxy behavior. ADR 009 was preserved. No database migration was needed.
+Added `.ai/REVIEW_PHASE3_AUTH_CLAUDE.md` (incoming review) and `.ai/REVIEW_PHASE3_AUTH_CODEX.md` (verification). Changed `backend/app/core/{config,security,seed}.py`, `backend/app/services/auth_service.py`, `backend/tests/unit/{test_config,test_security}.py`, `backend/tests/integration/test_auth.py`, `.env.example`, `README.md`, `scripts/dev.{ps1,sh}`, `docs/{AUTH_STRATEGY,DEPLOYMENT_STRATEGY,SECURITY_BASELINE}.md`, `.ai/{DECISIONS,TODO,BUGS,CURRENT_STATE,CHANGELOG_AI,AGENT_HANDOFF}.md`, and `SECOND_BRAIN_HANDOFF.md`. ADR 011 covers the browser API topology and serialized refresh contract; ADR 012 covers runtime mode, Argon2 worker bounds, and local proxy-header behavior. No database migration or frontend code was added.
 
-## Verification
+## Verification performed
 
-- `.venv\Scripts\python.exe -m pytest -q --tb=short` from `backend/`: **40 passed**.
-- Auth integration coverage: registration/login/profile/logout, missing role, disabled account, current roles, superadmin override, JWT tampering/expiry, rotation/reuse/unknown/expired tokens, bootstrap repeat safety, rate limits, and secret-free logs.
-- Independent PostgreSQL connections: concurrent refresh attempts produced exactly one success and one `401`; known reuse revoked the successor.
-- `.venv\Scripts\ruff.exe check .`: passed.
-- `.venv\Scripts\ruff.exe format --check .`: passed.
-- `.venv\Scripts\python.exe -m pip check`: no broken requirements. `uv pip check` also passed before pip was added to the ignored virtual environment.
-- Guarded Alembic check on `TEST_DATABASE_URL`: no new upgrade operations.
+- Dedicated Docker PostgreSQL `abdullah_core_test` only; guarded `backend/.venv/Scripts/python.exe -m pytest -q --tb=short`: **43 passed**. This includes the live PostgreSQL refresh race plus new missing-mode, offload, and non-JSON request tests. The normal development schema was not changed.
+- Focused `backend/.venv/Scripts/python.exe -m pytest -q tests/integration/test_auth.py --tb=short`: **9 passed**, including registration, login, bootstrap and refresh paths.
+- `backend/.venv/Scripts/python.exe -m ruff check .`: **passed**.
+- `backend/.venv/Scripts/python.exe -m ruff format --check .`: **40 files already formatted**.
+- `backend/.venv/Scripts/python.exe -m pip check`: **no broken requirements**.
+- Guarded Alembic `command.check` using `TEST_DATABASE_URL`: **no new upgrade operations detected**.
+- Independent installed-Uvicorn middleware probe: trusted loopback peer with forged XFF became `6.6.6.6`; untrusted `172.18.0.5` remained that peer. Limiter probe: 429 after five attempts, then original IP allowed after 4,096 other keys.
+- `bash -n scripts/dev.sh` and PowerShell parser on `scripts/dev.ps1`: **passed**.
 
 ## Remaining issues and exact next task
 
-BUG-008 is a browser deployment constraint: SameSite=Lax cookies require same-site SPA/API hosts (custom domains or a same-origin proxy). Default Cloudflare Pages and Railway domains are cross-site. The Phase 3 limiter does not enforce limits across workers/instances; production must configure exact trusted proxy IPs and strip untrusted forwarding headers. These are tracked in Phase 4/7 TODOs.
+Production deployment is **not** verified. BUG-009 and BUG-010 remain active; the Pages edge proxy also needs implementation and live cookie/path/cache testing. A copied development `.env` can still select development; deployment automation must enforce production. Low-priority audit follow-ups and additional tests remain in `.ai/TODO.md`. No Phase 4 work was begun here.
 
-**Exact next task:** Implement Phase 4 frontend shell and bilingual RTL/LTR engine only, first choosing a same-site SPA/API domain or proxy for browser cookie integration. Do not start Phase 5 administration or alter ADR 009 refresh behavior.
+**Exact next task:** Implement **Phase 4 frontend shell and bilingual RTL/LTR engine only** per `docs/DEVELOPMENT_ROADMAP.md`. Use relative `/api/v1`, configure the Vite `/api` proxy, and implement the documented browser refresh contract when wiring authentication. Implement and test the production Pages `/api/*` proxy before deployment; keep BUG-009/010 as deployment gates. Do not begin Phase 5 administration.

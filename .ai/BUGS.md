@@ -26,19 +26,59 @@ Whenever a bug, regression, or environment fault is identified, record it immedi
 
 ## 2. Active Bugs
 
+### 🐛 BUG-009: Real client IP depends on unverified production proxy trust
+- **Date Discovered:** 2026-09-24
+- **Severity:** Medium
+- **Component:** Deployment / authentication audit
+- **Symptoms:** Uvicorn's default loopback trust can accept a forged local `X-Forwarded-For`; an untrusted remote proxy collapses every client to the proxy address.
+- **Root Cause:** Uvicorn rewrites ASGI `client.host` before FastAPI based on `--proxy-headers` and `--forwarded-allow-ips`; there is no production launch configuration yet.
+- **Fix Applied:** Local launch instructions use `--no-proxy-headers`. Deployment docs require exact trusted ingress IPs, header overwrite and a live audit-IP smoke test, or edge limiting when those cannot be guaranteed.
+- **Verification:** Independent Uvicorn middleware probe: loopback + `X-Forwarded-For: 6.6.6.6` resolved as `6.6.6.6`; nontrusted `172.18.0.5` remained the peer.
+- **Status:** Active Phase 7 deployment gate; no production ingress was configured in this task.
+
+### 🐛 BUG-010: In-process auth limiter can be bypassed by address churn
+- **Date Discovered:** 2026-09-24
+- **Severity:** Medium
+- **Component:** Authentication rate limiting
+- **Symptoms:** A blocked IP is allowed again after 4,096 other keys; IPv6 address rotation and multi-worker distribution weaken limits.
+- **Root Cause:** Bounded least-recently-used per-IP store with no shared or per-account counter.
+- **Fix Applied:** Scope and limitations are now explicit in auth/deployment docs and Phase 7 TODO. The current limiter remains a local starter control.
+- **Verification:** Independent probe returned 429 after five attempts and then allowed the original IP after key churn.
+- **Status:** Active production hardening; does not block Phase 4 local auth integration.
+
+---
+
+## 3. Resolved Bugs
+
 ### 🐛 BUG-008: Default split hosting domains do not carry Lax auth cookies
 - **Date Discovered:** 2026-09-24
 - **Severity:** Medium
 - **Component:** Browser deployment integration
 - **Symptoms:** A browser SPA on a default Cloudflare Pages domain cannot use the Phase 3 HttpOnly `SameSite=Lax` cookies when calling an unrelated Railway domain.
 - **Root Cause:** Such hosts are cross-site; browsers omit Lax cookies on cross-site API fetches.
-- **Fix Applied:** Deployment guidance now requires same-site custom domains or a same-origin reverse proxy. Phase 3 retains the approved Lax policy.
-- **Verification:** Phase 3 tests cover same-site API behavior; cross-site browser deployment belongs to Phase 4/7.
-- **Status:** Active deployment constraint; resolve domain/proxy topology before browser integration.
+- **Fix Applied:** ADR 011 chooses one browser-facing origin: Pages serves the SPA and proxies `/api/*` to Railway; the frontend uses relative `/api/v1` URLs. SameSite=Lax remains intact.
+- **Verification:** Phase 3 cookie behavior and browser SameSite semantics were checked; the proxy implementation and live deployment test remain Phase 4/7 tasks.
+- **Status:** Resolved as an architecture decision; not yet deployed.
 
----
+### 🐛 BUG-011: Missing ENVIRONMENT selected development guards
+- **Date Discovered:** 2026-09-24
+- **Severity:** Medium
+- **Component:** Configuration
+- **Symptoms:** Unset `ENVIRONMENT` silently accepted a weak key, insecure cookies, debug and HTTP origins.
+- **Root Cause:** Settings defaulted to `development`.
+- **Fix Applied:** `ENVIRONMENT` is required; local template/tests set `development` explicitly and deployment docs require `production` verification.
+- **Verification:** Focused missing-mode validation test and existing staging/production guard tests pass.
+- **Status:** Resolved; copying a development `.env` unchanged remains an operational risk.
 
-## 3. Resolved Bugs
+### 🐛 BUG-012: Argon2 blocked the async event loop
+- **Date Discovered:** 2026-09-24
+- **Severity:** Medium
+- **Component:** Authentication concurrency
+- **Symptoms:** Password hashing/verification in registration, login and bootstrap could delay unrelated requests.
+- **Root Cause:** Synchronous Argon2 calls ran inside async functions.
+- **Fix Applied:** Offloaded hashing/verification to AnyIO worker threads under a dedicated two-operation limiter, retaining Argon2 parameters and the unknown-user dummy path.
+- **Verification:** Offload thread-identity unit test and live registration/login/bootstrap integration tests pass.
+- **Status:** Resolved.
 
 ### 🐛 BUG-003: ORM user deletion failed with loaded children
 - **Date Discovered:** 2026-09-24

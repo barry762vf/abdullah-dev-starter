@@ -12,6 +12,12 @@ BASE = {
 }
 
 
+def test_environment_must_be_explicit(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ENVIRONMENT", raising=False)
+    with pytest.raises(ValidationError, match="environment"):
+        Settings(_env_file=None, **BASE)
+
+
 def test_development_settings_parse_origins_and_hide_secrets() -> None:
     settings = Settings(_env_file=None, **BASE)
 

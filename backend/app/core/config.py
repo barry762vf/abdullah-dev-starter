@@ -18,7 +18,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    environment: Literal["development", "staging", "production"] = "development"
+    environment: Literal["development", "staging", "production"]
     debug: bool = False
     secret_key: SecretStr
     database_url: SecretStr

@@ -43,5 +43,6 @@ Production uses one public origin: the `web` image serves the SPA and proxies `/
 - [Development roadmap](docs/DEVELOPMENT_ROADMAP.md)
 - [Security baseline](docs/SECURITY_BASELINE.md)
 - [Deployment strategy](docs/DEPLOYMENT_STRATEGY.md)
+- [Optional integrations](docs/INTEGRATIONS.md)
 
 The planning documents live in `docs/`. `.ai/` records current implementation state and engineer handoffs. The source is distributed under the [MIT License](LICENSE).

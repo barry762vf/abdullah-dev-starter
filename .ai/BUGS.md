@@ -26,7 +26,7 @@ Whenever a bug, regression, or environment fault is identified, record it immedi
 
 ## 2. Active Bugs
 
-*No active bugs. BUG-009, BUG-010 and BUG-013 were resolved or formally accepted in Phase 7 (see ADR 014).*
+*No active application bugs. BUG-009, BUG-010 and BUG-013 were resolved or formally accepted in Phase 7 (see ADR 014). Phase 8 provider network behavior is mocked; no paid-service credentials were used. The first live provider and Cloudflare/Railway checks remain deployment tasks.*
 
 ## 3. Resolved Bugs
 

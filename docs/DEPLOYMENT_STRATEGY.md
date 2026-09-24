@@ -116,6 +116,8 @@ Supabase requires TLS: append `?ssl=require` to the asyncpg `DATABASE_URL`. `/ap
 
 ## 9. CI (GitHub Actions)
 
+Phase 8 adds an optional `egress` network to the API container for configured AI, Telegram, Storage and SMTP adapters. The database and migration job stay internal. Leave providers disabled unless their credentials, outbound firewall policy and service quotas have been reviewed. See `docs/INTEGRATIONS.md` for the exact variables and webhook handling contract.
+
 | Workflow | Runs on changes to | Checks |
 | :--- | :--- | :--- |
 | `backend-ci` | `backend/**` | pip check, Ruff lint and format, fast unit tests, full pytest with coverage against a PostgreSQL 16 service (migration round-trip, drift check, migration lock) |

@@ -160,9 +160,11 @@ Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's in
 ---
 
 ## 🔌 Phase 8: Reusable Extension Slots (Pluggable Modules)
-- [ ] Define abstract interfaces (`backend/app/integrations/base.py`).
-- [ ] Implement Gemini AI provider adapter slot.
-- [ ] Implement Telegram Bot messenger adapter slot.
-- [ ] Implement Supabase Storage bucket adapter slot.
-- [ ] Implement Email notification adapter slot.
-- [ ] Verify `NullProvider` fallback operations.
+- [x] Define typed protocols and inert Null fallbacks (`backend/app/integrations/base.py`).
+- [x] Implement Gemini AI REST adapter and superadmin-only reference generation endpoint.
+- [x] Implement Telegram Bot send adapter and secret-validated webhook that refuses 2xx until a durable handler is installed.
+- [x] Implement Supabase Storage server-side upload adapter; no generic public upload route.
+- [x] Implement authenticated SMTP notification adapter off the event loop.
+- [x] Validate provider selection and required settings; test Null and enabled paths with mocked services.
+- [x] Provide deliberate API egress in production Compose, production/dev environment templates and integration guidance.
+- [ ] Per deployment: configure real provider credentials, quotas, outbound firewall rules and a durable Telegram handler before enabling those services.

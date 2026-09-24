@@ -1,8 +1,23 @@
-# AI Agent Handoff — Phase 7 production containerization and CI/CD complete
+# AI Agent Handoff — Phase 8 optional integrations
 
-> From: Claude Code
+> From: Codex, continuing Claude Code's Phase 7 handoff
 > Date: 2026-09-24
-> Status: Phases 0–7 complete and verified. Phase 8 (integration slots) is next; not started.
+> Status: Phase 7 verified; Phase 8 locally verified, GitHub CI and Git push in progress.
+
+## Current takeover and Phase 8 work
+
+- **State found:** Clean `main` at `3726cca`, equal to fetched `origin/main`; no uncommitted Claude work. GitHub `backend-ci`, `frontend-ci` and `containers` all succeeded for that exact Phase 7 SHA. Claude's Phase 7 live Docker smoke and 24/24 checks are recorded below. This task environment cannot find a Docker CLI, but localhost PostgreSQL is reachable and the guarded database suite runs.
+- **Phase decision:** Phase 7 genuinely met its roadmap criteria, so Phase 8 was started. No work beyond Phase 8 was begun.
+- **Added:** `backend/app/integrations/{base,factory}.py`, Gemini, Telegram, Supabase Storage and SMTP adapters; `backend/app/api/v1/integrations.py`; `backend/tests/unit/test_integrations.py`; `docs/INTEGRATIONS.md`.
+- **Changed:** Settings, API router, dependency placement, production Compose egress/environment, `.env.example`, `deploy/production.env.example`, route inventory test, deployment docs, ADR 015 and `.ai/` state.
+- **Architecture:** Four typed protocols and Null fallbacks under ADR 006/015; provider selection validates credentials at startup. Gemini uses REST rather than an eager SDK. The AI endpoint is superadmin-only. Telegram's webhook validates its configured secret and refuses to acknowledge updates until a clone installs a durable handler. Storage and email have no public routes. API egress is deliberate; db and migrate remain internal.
+- **Checks:** 136 backend pytest tests against guarded PostgreSQL (95% coverage), Alembic drift check, Ruff lint/format and pip check passed; 54 frontend Vitest tests with coverage, TypeScript, ESLint and build passed. Full npm audit: exit 1 with 8 accepted findings; `npm audit --omit=dev --audit-level=high`: exit 0 with two moderate. New commit's container CI remains to be checked.
+- **Risks:** No paid provider credentials were used, so live Gemini/Telegram/Supabase/SMTP behavior is not proven. The first Cloudflare/Railway smoke and WAF rules remain per-deployment work. The Docker CLI is absent in this task environment; use the GitHub `containers` workflow to verify Phase 8 Compose. BUG-013 remains the documented accepted dependency scope.
+- **Exact next task after Phase 8:** Stop roadmap implementation. On the chosen public hosts, follow `docs/DEPLOYMENT_STRATEGY.md` §8 to set WAF limits and verify same-origin cookies, `/users/me`, refresh/logout, proxy bypass refusal and real audit IP. Enable optional providers only with project-specific credentials, quotas, egress rules and (for Telegram) durable update handling.
+
+---
+
+## Prior handoff: Claude Code Phase 7 evidence
 
 ## 1. Production architecture (ADR 014, `docs/DEPLOYMENT_STRATEGY.md`)
 

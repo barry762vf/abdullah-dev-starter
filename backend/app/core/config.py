@@ -49,9 +49,21 @@ class Settings(BaseSettings):
     initial_admin_password: SecretStr = SecretStr("")
     ai_provider: str = "disabled"
     gemini_api_key: SecretStr = SecretStr("")
+    gemini_model: str = "gemini-2.5-flash"
+    messenger_provider: str = "disabled"
     telegram_bot_token: SecretStr = SecretStr("")
+    telegram_webhook_secret: SecretStr = SecretStr("")
+    storage_provider: str = "disabled"
     supabase_url: str = ""
     supabase_key: SecretStr = SecretStr("")
+    supabase_bucket: str = ""
+    email_provider: str = "disabled"
+    smtp_host: str = ""
+    smtp_port: int = Field(default=587, ge=1, le=65535)
+    smtp_username: str = ""
+    smtp_password: SecretStr = SecretStr("")
+    smtp_from_email: str = ""
+    smtp_starttls: bool = True
 
     @field_validator("database_url")
     @classmethod
@@ -92,6 +104,61 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_non_development_security(self) -> "Settings":
+        if self.ai_provider not in {"disabled", "gemini"}:
+            raise ValueError("AI_PROVIDER must be disabled or gemini")
+        if self.ai_provider == "gemini":
+            if not self.gemini_api_key.get_secret_value():
+                raise ValueError("GEMINI_API_KEY is required when AI_PROVIDER=gemini")
+            if not self.gemini_model or not all(
+                char.isascii() and (char.isalnum() or char in "-_.") for char in self.gemini_model
+            ):
+                raise ValueError("GEMINI_MODEL is invalid")
+        if self.messenger_provider not in {"disabled", "telegram"}:
+            raise ValueError("MESSENGER_PROVIDER must be disabled or telegram")
+        if self.messenger_provider == "telegram":
+            if not self.telegram_bot_token.get_secret_value():
+                raise ValueError("TELEGRAM_BOT_TOKEN is required")
+            secret = self.telegram_webhook_secret.get_secret_value()
+            if (
+                len(secret) < 32
+                or len(secret) > 256
+                or not all(char.isascii() and (char.isalnum() or char in "_-") for char in secret)
+            ):
+                raise ValueError("TELEGRAM_WEBHOOK_SECRET must be 32-256 safe characters")
+        if self.storage_provider not in {"disabled", "supabase"}:
+            raise ValueError("STORAGE_PROVIDER must be disabled or supabase")
+        if self.storage_provider == "supabase":
+            url = urlsplit(self.supabase_url)
+            if (
+                url.scheme != "https"
+                or not url.hostname
+                or url.port
+                or url.username
+                or url.password
+                or url.path not in {"", "/"}
+                or url.query
+                or url.fragment
+                or not url.hostname.endswith(".supabase.co")
+            ):
+                raise ValueError("SUPABASE_URL must be an HTTPS supabase.co project origin")
+            if not self.supabase_key.get_secret_value() or not self.supabase_bucket:
+                raise ValueError("SUPABASE_KEY and SUPABASE_BUCKET are required")
+        if self.email_provider not in {"disabled", "smtp"}:
+            raise ValueError("EMAIL_PROVIDER must be disabled or smtp")
+        if self.email_provider == "smtp":
+            if not all(
+                (
+                    self.smtp_host,
+                    self.smtp_username,
+                    self.smtp_password.get_secret_value(),
+                    self.smtp_from_email,
+                )
+            ):
+                raise ValueError(
+                    "SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD and SMTP_FROM_EMAIL are required"
+                )
+            if self.environment != "development" and not self.smtp_starttls:
+                raise ValueError("SMTP_STARTTLS must be true outside development")
         if (
             self.client_ip_source == "edge_header"
             and len(self.edge_proxy_secret.get_secret_value()) < 32

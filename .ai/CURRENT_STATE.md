@@ -11,14 +11,14 @@
 
 | Metric | Status | Details |
 | :--- | :--- | :--- |
-| **Active Roadmap Phase** | **Phase 7 complete; Phase 8 next** | Production containers, proxy topology, CI and deployment gates complete. No Phase 8 integration work started. |
+| **Active Roadmap Phase** | **Phase 8 locally complete; GitHub container CI pending** | Optional provider slots added after Phase 7's exact commit passed all three GitHub workflows. |
 | **Backend State** | Auth, RBAC and administration complete | Phase 3 auth plus `/api/v1/admin` users/PATCH/stats/audit-logs under one router guard, superadmin-only role changes, advisory-lock last-superadmin invariant and admin audit rows (ADR 013). |
 | **Frontend State** | Phase 5 implemented | Phase 4 shell plus `/admin` (overview, users, audit log) behind AuthGuard and UX-only RoleGuard; accessible dialogs, bilingual RTL/LTR tables. |
 | **Database State** | Revisions 001 and 002 verified | Docker PostgreSQL healthy; `abdullah_core_test` passed explicit upgrade, downgrade to base, re-upgrade, Alembic drift check, and new regressions. Development schema was not changed. |
 | **Authentication** | Phase 3 implemented | Registration, login, refresh, logout, and self profile routes pass live PostgreSQL tests. Known reuse revokes active sessions; unknown/expired tokens do not. |
-| **Test Suite** | Phase 7 checks passing | 118 backend pytest (96% coverage) and 54 frontend Vitest tests; Ruff, pip check, Alembic check, TypeScript, ESLint, build; production Docker stack built, run and smoke-tested locally. |
+| **Test Suite** | Phase 8 local checks passing | 136 backend pytest (95% coverage) against guarded PostgreSQL, with Alembic drift check; Ruff and pip check pass. 54 frontend Vitest tests, TypeScript, ESLint and build pass. Phase 7 container CI passed on `3726cca`. |
 | **Documentation** | Foundation guide complete | Engineering guides are in `docs/`; root `README.md` and `LICENSE` are present. |
-| **Active Blockers** | None in the repository | BUG-009/010/013 resolved or formally accepted (ADR 014). Operational: first live Cloudflare/Railway smoke test and WAF rules per deployment. |
+| **Active Blockers** | None in the repository | Live provider calls and the first Cloudflare/Railway deployment still require project credentials; Docker CLI is unavailable in this task environment, so Phase 8 production Compose must be verified by CI. |
 
 ---
 
@@ -54,4 +54,4 @@
 
 ## 3. Immediate Focus (Next Up)
 
-The exact next roadmap task is **Phase 8 pluggable integration slots** from `docs/DEVELOPMENT_ROADMAP.md` (abstract interfaces with NullProvider fallbacks). Integrations needing outbound network access must add a deliberate egress network to the production compose file.
+Push Phase 8 and verify its GitHub backend and container workflows. Then stop roadmap implementation; the next operational task is the documented first live deployment smoke test and Cloudflare WAF setup with real host credentials. Provider-specific live tests belong to a cloned project when those slots are enabled.

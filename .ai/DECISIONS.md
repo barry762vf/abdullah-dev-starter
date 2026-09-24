@@ -177,3 +177,13 @@ This file contains permanent records of all major technical and architectural de
   - **Configuration:** production refuses to start with weak/sample secrets, insecure cookies, debug, HTTP origins, an implicit client-IP source, or a leftover `INITIAL_ADMIN_PASSWORD`; the image preflight exits non-zero instead of crash-looping. API docs are off outside development. Pool sizes are configurable, with a transaction-pooler mode for Supabase Supavisor.
   - **BUG-013:** accept the remaining advisories with documented scope instead of major upgrades (see BUGS.md); CI gates the production dependency audit.
 - **Consequences:** A proxy secret must be provisioned on both the proxy and the API and rotated together. Cloudflare WAF rules and the first live Cloudflare/Railway smoke test are operational steps outside the repository. A known email can be throttled by repeated failures (bounded by edge limits). `backend` has no outbound internet on the internal compose network; Phase 8 integrations that need egress must add an egress network deliberately.
+
+---
+
+## ADR 015: Optional provider slots and outbound network boundary
+
+- **Date:** 2026-09-24
+- **Status:** Accepted
+- **Context:** Phase 8 must make Gemini, Telegram, Supabase Storage and email available to cloned projects while preserving ADR 006's lightweight, credential-free default startup. The production API had no outbound network route.
+- **Decision:** Four typed protocols have inert Null implementations; validated environment selectors construct the reference adapters only when enabled. Gemini, Telegram and Supabase use their documented HTTPS APIs through the already-used `httpx` dependency, avoiding eager vendor SDK imports. Email uses authenticated SMTP and STARTTLS off the event loop. The only generic AI route is superadmin-only; storage and mail have no public routes. The Telegram webhook validates Telegram's secret header and returns 503 until a cloned app supplies a durable update handler, so updates are retried rather than silently dropped. The API alone joins a deliberate Compose egress network; database and migration services stay internal.
+- **Consequences:** Configured providers require outbound access and operator-managed credentials, quotas and data policies. Cloned projects must authorize storage/mail use and install a durable Telegram handler. No live paid provider calls are part of CI. OpenAI and WhatsApp remain protocol extension examples, not enabled products.

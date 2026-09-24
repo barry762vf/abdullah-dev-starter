@@ -16,6 +16,23 @@ x-api-environment: &api-environment
   DB_POOL_SIZE: ${DB_POOL_SIZE:-5}
   DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-5}
   WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+  AI_PROVIDER: ${AI_PROVIDER:-disabled}
+  GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+  GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+  MESSENGER_PROVIDER: ${MESSENGER_PROVIDER:-disabled}
+  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+  TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+  STORAGE_PROVIDER: ${STORAGE_PROVIDER:-disabled}
+  SUPABASE_URL: ${SUPABASE_URL:-}
+  SUPABASE_KEY: ${SUPABASE_KEY:-}
+  SUPABASE_BUCKET: ${SUPABASE_BUCKET:-}
+  EMAIL_PROVIDER: ${EMAIL_PROVIDER:-disabled}
+  SMTP_HOST: ${SMTP_HOST:-}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USERNAME: ${SMTP_USERNAME:-}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+  SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
+  SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
 
 x-hardening: &hardening
   read_only: true
@@ -60,7 +77,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
-    networks: [backend]
+    # Deliberate outbound route for configured optional providers; migrate/db stay internal.
+    networks: [backend, egress]
     restart: unless-stopped
     <<: *hardening
 
@@ -89,6 +107,7 @@ networks:
   backend:
     internal: true
   edge: {}
+  egress: {}
 
 volumes:
   postgres_prod_data:

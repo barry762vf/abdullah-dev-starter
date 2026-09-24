@@ -1,0 +1,18 @@
+# Optional integrations (Phase 8)
+
+The backend starts with every provider disabled. `app/integrations/base.py` defines four small protocols and inert Null implementations. `app/integrations/factory.py` selects adapters from validated environment settings. No outbound call or vendor adapter initialization occurs when a slot is disabled. The reference adapters use `httpx` for the documented REST APIs and Python's SMTP library for email; no vendor SDK is required at startup.
+
+| Slot | Enable | Required settings | Reference behavior |
+| --- | --- | --- | --- |
+| AI | `AI_PROVIDER=gemini` | `GEMINI_API_KEY`; optional `GEMINI_MODEL` | Text generation through Google's `generateContent` REST API. `POST /api/v1/integrations/ai/generate` accepts a 1–4000-character prompt and requires a current **superadmin** session. Disable or add project-specific quotas before wider access because calls may incur cost. |
+| Messenger | `MESSENGER_PROVIDER=telegram` | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | `send_text` calls the Bot API. `POST /api/v1/integrations/telegram/webhook` checks Telegram's secret header and limits the body to 64 KiB. It returns 503 until the cloned app installs an async `app.state.telegram_update_handler` that durably handles the parsed update. This prevents silent update loss. Set the webhook with the same secret in Telegram. |
+| Storage | `STORAGE_PROVIDER=supabase` | `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_BUCKET` | Server-side upload to one bucket with overwrite disabled. There is no public upload endpoint or object ACL policy in the starter. A cloned app must authorize callers, enforce file size/type limits, and decide RLS/service-key scope before exposing uploads. |
+| Email | `EMAIL_PROVIDER=smtp` | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`; `SMTP_STARTTLS=true` outside development | SMTP authentication and STARTTLS run in a worker thread. Sending is an internal service slot; there is no public mail endpoint. |
+
+Provider selection is strict: an unknown name, missing credentials, invalid Supabase origin, or insecure production SMTP mode fails Settings validation at startup. Credentials are `SecretStr` and must be supplied through environment variables or a secret manager. Upstream failures are wrapped as `ProviderUnavailable`; the AI route returns a generic 502, without forwarding provider error text. Other slots must be called from project-specific services that handle this exception and implement their own retry or delivery policy. A Null provider returns `None` or `False`, allowing callers to check whether an optional action occurred.
+
+The self-hosted Compose stack attaches the API container to an `egress` network for optional outbound HTTPS/SMTP. The database and migration job remain on the internal network. Outbound firewall allowlists, SMTP reachability, data handling, and service quotas depend on the deployment and must be reviewed before enabling a provider. For Railway, provide the same variables as service secrets. The Cloudflare Pages proxy still serves all browser API calls through relative `/api/v1` and does not need vendor credentials.
+
+OpenAI and WhatsApp can implement `BaseAIProvider` and `BaseMessenger` in a cloned project. The core does not enable or ship vendor-specific behavior for them. Tests mock every external request; no paid API credentials are required in CI.
+
+Reference API documentation: [Gemini generateContent](https://ai.google.dev/api/generate-content), [Telegram Bot API](https://core.telegram.org/bots/api), [Supabase Storage access control](https://supabase.com/docs/guides/storage/security/access-control).

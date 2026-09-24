@@ -42,4 +42,6 @@ Deployment lessons: a multi-worker Uvicorn parent keeps running when workers cra
 
 ## Next direction
 
-Continue with Phase 8 integration slots. Before a public launch, run the documented live checks on the real hosts and add Cloudflare WAF limits. Build and verify the edge proxy before deployment; resolve the remaining production ingress, rate-limit, and dependency gates. The current task state is in `.ai/AGENT_HANDOFF.md` and `.ai/CURRENT_STATE.md`.
+Phase 8 added optional Gemini, Telegram, Supabase Storage and SMTP extension slots behind typed interfaces and inert defaults (ADR 015). The core starts without external credentials. Enabling a provider is a deliberate deployment choice with outbound access, cost limits and data policy; Telegram updates must be durably handled before the webhook acknowledges them.
+
+The development roadmap now ends after Phase 8. Before a public launch, follow the documented live Cloudflare/Railway checks and add Cloudflare WAF limits. The current engineering detail is in `.ai/AGENT_HANDOFF.md` and `.ai/CURRENT_STATE.md`.

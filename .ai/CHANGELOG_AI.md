@@ -10,6 +10,14 @@ This file tracks every AI agent session, modified files, verification performed,
 
 ## 📋 Session Log
 
+### 🔹 2026-09-24: Phase 8 reusable extension slots
+
+- **Agent Role / ID:** Codex (primary implementation engineer; took over after Claude Code reached usage limit).
+- **Starting State:** Clean `main` at `3726cca`, matching `origin/main`; Phase 7 commit pushed, all three workflows green for that SHA. Claude's container, CI and proxy implementation preserved.
+- **Implementation:** ADR 015; typed AI/messenger/storage/email protocols and inert Null fallbacks; strict provider configuration; Gemini REST text adapter and superadmin-only reference route; Telegram send adapter and secret-validated webhook that returns 503 until durable handling is installed; Supabase Storage upload slot; SMTP/STARTTLS email slot; API-only Compose egress, environment templates and `docs/INTEGRATIONS.md`.
+- **Verification:** Full guarded PostgreSQL suite **136 passed, 95% coverage**, with Alembic drift check. Ruff lint/format and pip check passed. Frontend 54 passed with coverage; TypeScript, lint and build passed. Full npm audit exits 1 with 8 accepted advisories; production-only audit exits 0 with two moderate, accepted under BUG-013. Phase 7 GitHub workflows all passed on the takeover SHA; Phase 8 container CI follows the push.
+- **Next Task:** Push Phase 8 normally, verify the new commit's GitHub backend/containers workflows, then stop after Phase 8. Follow with the first live deployment smoke test and WAF setup as an operational task.
+
 ### 🔹 2026-09-24: Phase 7 production containerization and CI/CD
 - **Agent Role / ID:** Claude Code
 - **Implementation:** Non-root backend image with preflight and health check; unprivileged Nginx web image serving the SPA and the authenticated same-origin `/api/*` proxy with shared per-IP auth limits; `docker-compose.prod.yml` (migrate release job, internal network, read-only hardened containers); Cloudflare Pages Function proxy and `_headers`; `EdgeClientIPMiddleware` and explicit `CLIENT_IP_SOURCE`; PostgreSQL per-account login throttle; migration advisory lock; configurable pool and transaction-pooler mode; docs off outside development; bootstrap-password refusal; `no-store` API responses; 3 s readiness bound; `ENV_FILE`; GitHub Actions backend/frontend/containers workflows; `scripts/build.ps1`, `scripts/smoke-prod.sh`; ADR 014; DEPLOYMENT_STRATEGY rewritten.

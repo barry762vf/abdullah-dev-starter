@@ -10,6 +10,15 @@ This file tracks every AI agent session, modified files, verification performed,
 
 ## 📋 Session Log
 
+### 🔹 2026-09-24: Phase 6 automated regression suite
+- **Agent Role / ID:** Claude Code
+- **Backend (+49 tests, 50 → 99):** forged/incomplete JWTs and ignored role claims; unit-tested `_test` database guard (host/port/database comparison); CORS allowlist/preflight and security headers incl. production-only HSTS; route inventory for all non-public routes; deleted-user tokens; cookie attributes on login/logout; disabled-user refresh revoking every session; rollback after the conditional refresh UPDATE; secrets absent from logs on reuse/bootstrap; proven-concurrent refresh and bootstrap races (`pg_stat_activity` lock wait); bootstrap refusing existing accounts; name spoofing characters; `get_db` rollback and connection release; limiter window/bound; admin disable, secret-free admin responses, invalid roles and forced last-superadmin rollback.
+- **Frontend (+13 tests, 32 → 45):** cross-tab sign-out and ignored foreign messages, navbar logout success/failure, login destination allowlist, theme persistence, stats retry, RoleGuard error, audit/users empty and error states, pagination, enable without confirmation, dialog Tab containment.
+- **Tooling:** folder-based `unit`/`integration` markers; `pytest-cov` with greenlet tracing; explicit `python-dotenv`; `@vitest/coverage-v8` and `npm run test:coverage`; coverage reported, not enforced.
+- **Defects:** none in application behavior. Test-harness issues fixed: a bootstrap race proof depended on committed roles; one CORS assertion was stricter than the security property (Starlette sends Allow-Credentials without Allow-Origin, which browsers ignore).
+- **Verification:** backend 99 passed, 97% coverage; Ruff check/format, pip check, Alembic check. Frontend 45 passed, 98.4% lines / 90.2% branches; typecheck, lint, build; audit 8 (dev, inherited) / production 2 moderate.
+- **Next Task:** Phase 7 production containerization and CI/CD.
+
 ### 🔹 2026-09-24: Phase 5 administration
 - **Agent Role / ID:** Claude Code
 - **Implementation:** `/api/v1/admin` users list (pagination, escaped search, role filter), `PATCH /users/{id}` (status, verification, superadmin-only roles), stats and audit logs under one router guard; advisory-lock actor re-check and last-superadmin invariant; refresh-session revocation on disable; one `admin.user_update` audit row per effective change (ADR 013). Frontend `/admin` overview, users and audit log behind AuthGuard + UX-only RoleGuard; shared `useDialogFocus` and `Dialog`; confirmation for disable/role changes; text-only audit rendering; English/Arabic translations.

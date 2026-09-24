@@ -99,3 +99,42 @@ async def test_password_work_is_offloaded_from_event_loop(monkeypatch: pytest.Mo
     assert await security.verify_password_async("test-password", hashed)
     assert len(worker_threads) == 2
     assert all(thread != loop_thread for thread in worker_threads)
+
+
+def _claims(**overrides):
+    now = datetime.now(UTC)
+    claims = {"sub": str(uuid4()), "type": "access", "iat": now, "exp": now + timedelta(minutes=5)}
+    claims.update(overrides)
+    return {key: value for key, value in claims.items() if value is not None}
+
+
+FORGED = {
+    "alg none": lambda key: jwt.encode(_claims(), None, algorithm="none"),
+    "HS512 with the same key": lambda key: jwt.encode(_claims(), key, algorithm="HS512"),
+    "HS256 with another key": lambda key: jwt.encode(_claims(), "other-secret", algorithm="HS256"),
+    "missing sub": lambda key: jwt.encode(_claims(sub=None), key),
+    "missing type": lambda key: jwt.encode(_claims(type=None), key),
+    "missing iat": lambda key: jwt.encode(_claims(iat=None), key),
+    "missing exp": lambda key: jwt.encode(_claims(exp=None), key),
+    "non-UUID sub": lambda key: jwt.encode(_claims(sub="admin"), key),
+    "integer sub": lambda key: jwt.encode(_claims(sub=5), key),
+    "iat in the future": lambda key: jwt.encode(
+        _claims(iat=datetime.now(UTC) + timedelta(hours=1)), key
+    ),
+}
+
+
+@pytest.mark.parametrize("case", sorted(FORGED))
+def test_forged_or_incomplete_tokens_are_rejected(case: str, settings: Settings) -> None:
+    token = FORGED[case](settings.secret_key.get_secret_value())
+    with pytest.raises(ValueError, match="Invalid access token"):
+        decode_access_token(token, settings)
+
+
+def test_extra_role_claims_are_ignored(settings: Settings) -> None:
+    """Only the subject is trusted; current roles always come from PostgreSQL."""
+    user_id = uuid4()
+    token = jwt.encode(
+        _claims(sub=str(user_id), roles=["superadmin"]), settings.secret_key.get_secret_value()
+    )
+    assert decode_access_token(token, settings) == user_id

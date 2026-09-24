@@ -34,6 +34,7 @@ Whenever a bug, regression, or environment fault is identified, record it immedi
 - **Root Cause:** ADR 002 and the folder architecture select older major versions; npm's proposed fixes require Vite 8, Vitest 5, and React Router 7, which are major upgrades outside Phase 4's approved stack.
 - **Fix Applied:** Vite dev server binds only `127.0.0.1`; no Vite/Vitest server is shipped in the static production bundle. The only post-login navigation target is the fixed `/dashboard` path, and all app links use fixed internal paths; the SSR hydration advisory does not apply to this SPA. No forced major upgrade was made silently.
 - **Verification:** Full npm audit failed with 7 findings. `npm audit --omit=dev --audit-level=high` exited 0 but still reported two moderate Router findings. Frontend tests, typecheck, lint and static build pass.
+- **Phase 6 note:** Adding `@vitest/coverage-v8@2.1.9` (dev only, matched to Vitest 2.1.9) raises the full audit to 8 entries (2 critical). The new entry is inherited from the existing Vitest advisory, not a new underlying vulnerability; the production audit is unchanged (2 moderate Router findings).
 - **Status:** Active; reassess and upgrade with ADR review before shared development or public deployment. Do not treat the successful build as clearing the advisory.
 
 ### 🐛 BUG-009: Real client IP depends on unverified production proxy trust

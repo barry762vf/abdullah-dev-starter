@@ -34,6 +34,8 @@ Phase 5 adds administration (ADR 013). The backend is the only security boundary
 
 Lessons from Phase 5: invariants such as "at least one active superadmin" must be enforced only by the changes that can break them, or they block unrelated work; and absolutely positioned screen-reader text inside horizontally scrolling tables needs a positioned container, or it widens mobile pages.
 
+Phase 6 turned the suites into a regression net: 99 backend and 45 frontend tests, with coverage reported but not enforced. Two durable testing lessons: concurrency tests must *prove* the overlap (for example, wait until PostgreSQL shows the second transaction blocked on the lock) or they can silently pass sequentially; and coverage for SQLAlchemy async code needs greenlet tracing, or executed code looks untested and misdirects effort.
+
 ## Next direction
 
-Continue with Phase 6 automated tests and coverage. Build and verify the edge proxy before deployment; resolve the remaining production ingress, rate-limit, and dependency gates. The current task state is in `.ai/AGENT_HANDOFF.md` and `.ai/CURRENT_STATE.md`.
+Continue with Phase 7 containerization and CI/CD, closing the deployment gates. Build and verify the edge proxy before deployment; resolve the remaining production ingress, rate-limit, and dependency gates. The current task state is in `.ai/AGENT_HANDOFF.md` and `.ai/CURRENT_STATE.md`.

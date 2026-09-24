@@ -4,8 +4,8 @@ import os
 from pathlib import Path
 
 import pytest
+from db_guard import unsafe_test_database_reason
 from dotenv import dotenv_values
-from sqlalchemy.engine import make_url
 
 from alembic import command
 from alembic.config import Config
@@ -19,16 +19,9 @@ def test_database_url() -> str:
     local = dotenv_values(ROOT / ".env")
     raw = os.environ.get("TEST_DATABASE_URL") or local.get("TEST_DATABASE_URL")
     normal = local.get("DATABASE_URL")
-    if not raw:
-        pytest.fail("Set TEST_DATABASE_URL to an isolated PostgreSQL test database")
-    url = make_url(raw)
-    if (
-        url.drivername != "postgresql+asyncpg"
-        or not url.database
-        or not url.database.endswith("_test")
-        or (normal and raw == normal)
-    ):
-        pytest.fail("TEST_DATABASE_URL must use asyncpg and a distinct *_test database")
+    reason = unsafe_test_database_reason(raw, normal)
+    if reason:
+        pytest.fail(reason)
     return raw
 
 

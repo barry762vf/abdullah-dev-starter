@@ -11,12 +11,12 @@
 
 | Metric | Status | Details |
 | :--- | :--- | :--- |
-| **Active Roadmap Phase** | **Phase 5 complete; Phase 6 next** | Administration API and bilingual admin UI are implemented and verified. No Phase 6 or deployment work started. |
+| **Active Roadmap Phase** | **Phase 6 complete; Phase 7 next** | Automated regression suite and coverage reporting are complete. No Phase 7 deployment or Phase 8 integration work started. |
 | **Backend State** | Auth, RBAC and administration complete | Phase 3 auth plus `/api/v1/admin` users/PATCH/stats/audit-logs under one router guard, superadmin-only role changes, advisory-lock last-superadmin invariant and admin audit rows (ADR 013). |
 | **Frontend State** | Phase 5 implemented | Phase 4 shell plus `/admin` (overview, users, audit log) behind AuthGuard and UX-only RoleGuard; accessible dialogs, bilingual RTL/LTR tables. |
 | **Database State** | Revisions 001 and 002 verified | Docker PostgreSQL healthy; `abdullah_core_test` passed explicit upgrade, downgrade to base, re-upgrade, Alembic drift check, and new regressions. Development schema was not changed. |
 | **Authentication** | Phase 3 implemented | Registration, login, refresh, logout, and self profile routes pass live PostgreSQL tests. Known reuse revokes active sessions; unknown/expired tokens do not. |
-| **Test Suite** | Phase 5 checks passing | 50 backend pytest and 32 frontend Vitest tests pass; Ruff check/format, pip check, Alembic drift, TypeScript, ESLint and Vite build pass. Live role behavior verified on the test database in English/Arabic, desktop/mobile. |
+| **Test Suite** | Phase 6 complete | 99 backend pytest (97% coverage; `pytest -m unit` runs 56 without PostgreSQL) and 45 frontend Vitest tests (98% lines, 90% branches); Ruff, pip check, Alembic check, TypeScript, ESLint and Vite build pass. |
 | **Documentation** | Foundation guide complete | Engineering guides are in `docs/`; root `README.md` and `LICENSE` are present. |
 | **Active Blockers** | None for local Phase 4 behavior | Production remains gated on the Pages edge proxy, trusted client IP and stronger shared/edge abuse controls (BUG-009/010). BUG-013 tracks old-major frontend dependency advisories; no production deployment is claimed. |
 
@@ -54,4 +54,4 @@
 
 ## 3. Immediate Focus (Next Up)
 
-The exact next roadmap task is **Phase 6 automated test suite** from `docs/DEVELOPMENT_ROADMAP.md`: coverage reporting and the remaining regression tests listed in `.ai/TODO.md`. Before public deployment, implement/verify the Pages proxy and resolve BUG-009/010/013.
+The exact next roadmap task is **Phase 7 production containerization and CI/CD** from `docs/DEVELOPMENT_ROADMAP.md`, including the deployment gates BUG-009, BUG-010, BUG-013 and the Pages `/api/*` proxy.

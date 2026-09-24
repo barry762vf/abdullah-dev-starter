@@ -10,6 +10,23 @@ requires-python = ">=3.11"
 testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+# Applied by folder in tests/conftest.py. Fast run without PostgreSQL: pytest -m unit
+markers = [
+    "unit: no database needed (tests/unit, tests/api)",
+    "integration: needs the dedicated *_test PostgreSQL database (tests/integration)",
+]
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+# SQLAlchemy async runs ORM code in greenlets; without this, executed lines look missed.
+concurrency = ["greenlet", "thread"]
+
+[tool.coverage.report]
+# Reported, not enforced: use it to find untested behavior, not as a target.
+show_missing = true
+skip_covered = true
+exclude_also = ["if __name__ == .__main__.:"]
 
 [tool.ruff]
 target-version = "py311"

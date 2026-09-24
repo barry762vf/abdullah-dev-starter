@@ -29,15 +29,13 @@ flowchart TD
 - **`httpx`**: Asynchronous HTTP test client (`httpx.AsyncClient`) passing requests directly into FastAPI ASGI without network overhead.
 - **`pytest-cov`**: Test coverage reporting.
 
-### Test Isolation Strategy (`tests/conftest.py`):
-1. **Isolated Test Database:** Phase 2 uses a dedicated PostgreSQL database selected by `TEST_DATABASE_URL`, with a required `_test` database-name suffix. PostgreSQL is required because the schema uses JSONB and PostgreSQL UUID defaults. The fixture rejects the normal development URL.
-2. **Transaction Rollback per Test:** Data tests use an outer transaction that rolls back automatically upon completion. The migration round-trip changes only the dedicated test schema.
-3. **Planned Phase 3 Fixtures:**
-   - `client`: Unauthenticated `AsyncClient`.
-   - `db_session`: Clean async database session.
-   - `test_user`: Seeded standard user (`user` role).
-   - `test_admin`: Seeded administrator user (`admin` role).
-   - `auth_headers`: Pre-authenticated headers with valid JWT bearer token.
+### Test Isolation Strategy
+
+1. **Markers by folder** (`tests/conftest.py`): `tests/unit` and `tests/api` are `unit` and need no database; `tests/integration` is `integration` and needs PostgreSQL. `pytest -m unit` is the fast loop; plain `pytest` runs everything.
+2. **Dedicated test database:** `TEST_DATABASE_URL` must use asyncpg, name a database ending in `_test`, and not resolve to the same host, port and database as `DATABASE_URL` (`tests/db_guard.py`, unit-tested). The development database is never touched.
+3. **Rollback per test:** request-level integration tests bind the app to one outer transaction (`join_transaction_mode="create_savepoint"`) that is rolled back afterwards.
+4. **Real concurrency only where it is the property:** refresh rotation, bootstrap and superadmin demotion races use independent committed connections, prove the second transaction was blocked (`pg_stat_activity` lock wait), and delete their rows in `finally`.
+5. **Fixtures:** each integration module defines a small app/client fixture plus user helpers (`add_user`/`make_user`, `login`/`bearer`); there is no global seeded-user fixture.
 
 ---
 
@@ -45,10 +43,12 @@ flowchart TD
 
 | Category | Test Path | Primary Invariants Verified |
 | :--- | :--- | :--- |
-| **Security & Crypto** | `tests/unit/test_security.py` | - Argon2id hashing and verification work reliably.<br>- Password hash changes upon password update.<br>- JWT creation embeds expiration and subject.<br>- Expired or tampered JWT fails decoding. |
-| **Authentication Flow** | `tests/api/test_auth.py` (Phase 3) | - Successful registration creates user and sends clean JSON (no password).<br>- Login with correct credentials returns 200 and sets cookies.<br>- Login with invalid password returns 401.<br>- Refresh atomically rotates a valid token.<br>- Reuse of a known revoked token revokes that user's sessions; unknown/tampered tokens receive 401 without user-wide revocation. |
-| **RBAC Authorization** | `tests/integration/test_admin.py` | - Standard user hitting `/api/v1/admin/users` gets `403 Forbidden`.<br>- Unauthenticated user hitting protected routes gets `401 Unauthorized`.<br>- Admin hitting `/api/v1/admin/users` receives paginated user list. |
-| **Database Migrations** | `tests/integration/test_database.py` | - Alembic upgrade, downgrade and re-upgrade execute on the dedicated test DB.<br>- Metadata drift check, async ping, defaults, constraints, cascades, and seed idempotency pass. |
+| **Security & Crypto** | `tests/unit/test_security.py` | Argon2id hash/verify and worker offload; JWT `alg:none`, HS512, wrong key, each missing claim, non-UUID `sub`, future `iat`, expiry and wrong type are rejected; extra `roles` claims are ignored. |
+| **Authentication Flow** | `tests/integration/test_auth.py`, `test_auth_regressions.py` | Register/login/profile/logout; refresh rotation, known-reuse revocation, unknown/expired tokens; deleted or disabled users; cookie `Path`/`Max-Age`/`Secure`/host-only on login and logout; rollback after the conditional refresh UPDATE; a proven-concurrent refresh race; bootstrap lock race and no promotion of existing accounts; secrets absent from logs on reuse and bootstrap; route inventory (every non-public route needs an active user); name spoofing characters rejected. |
+| **RBAC & Administration** | `tests/integration/test_admin.py` | 401/403/200 per role for every admin route (inventory-checked); pagination, escaped search, role filter; admin vs superadmin limits; no self-modification; immediate role and status effect; disabled admins lose access; last-superadmin invariant incl. concurrent demotion and rollback; audit rows; no secrets in admin responses. |
+| **HTTP Boundary** | `tests/api/*` | CORS allowlist and preflight, no grant for other origins, security headers, HSTS only in production, docs-only CSP relaxation, RFC 7807 errors, sanitized 500s and database-error logging, readiness. |
+| **Database** | `tests/integration/test_database.py` + `get_db` test | Migration base→head→base→head and drift check, constraints, cascades, restricted role deletion, `get_db` rollback and connection release when a handler raises. |
+| **Frontend** | `frontend/src/test/*` | EN/LTR and AR/RTL (including pre-paint direction), persistence, forms, AuthGuard/RoleGuard, login destination allowlist, refresh coordination and Web Lock ordering, cross-tab sign-out, logout success/failure, admin actions and confirmations, dialog focus, loading/error/empty states, inert audit rendering. |
 
 ---
 
@@ -74,16 +74,14 @@ flowchart TD
 ## 5. Execution Commands
 
 ```powershell
-# Run Backend Tests (from /backend directory)
-.venv/Scripts/python.exe -m pytest -q
+# Backend (from backend/)
+.venv/Scripts/python.exe -m pytest -q              # everything (needs the *_test database)
+.venv/Scripts/python.exe -m pytest -m unit -q      # fast, no database
+.venv/Scripts/python.exe -m pytest --cov           # with coverage report
 
-# Run Specific Auth Test Suite
-pytest tests/api/test_auth.py -v
-
-# Run Frontend Tests (from /frontend directory)
+# Frontend (from frontend/)
 npm run test
-
-# Run End-to-End Stack Validation
-docker compose up -d --build
-curl http://localhost:8000/api/v1/health
+npm run test:coverage                              # text summary + coverage/index.html
 ```
+
+Coverage is reported, not enforced. Backend coverage traces greenlets (`concurrency = ["greenlet", "thread"]`) because SQLAlchemy async code runs inside them; without it, executed lines appear missed. Use the report to find untested behavior; do not add tests only to raise the number.

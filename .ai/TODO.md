@@ -87,7 +87,7 @@ Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's in
 
 **Test hardening:**
 - [x] Verify login/register reject `text/plain` and form bodies with 422.
-- [ ] Add remaining regression tests in the relevant phase: JWT `alg:none`/HS512/missing claims/non-UUID `sub`/deleted user; ignored `roles` claim; cookie `Path`/`Max-Age`/`Secure`; bootstrap advisory-lock race; disabled user at refresh revokes all sessions; route inventory (all non-public routes use `get_current_active_user`); failure after the conditional UPDATE leaves the old token valid; log redaction on reuse/bootstrap paths; a barrier-based true refresh race.
+- [x] (Phase 6) Add remaining regression tests in the relevant phase: JWT `alg:none`/HS512/missing claims/non-UUID `sub`/deleted user; ignored `roles` claim; cookie `Path`/`Max-Age`/`Secure`; bootstrap advisory-lock race; disabled user at refresh revokes all sessions; route inventory (all non-public routes use `get_current_active_user`); failure after the conditional UPDATE leaves the old token valid; log redaction on reuse/bootstrap paths; a barrier-based true refresh race.
 
 **Low-priority hardening:**
 - [x] LOW-01 documentation: Access JWTs remain valid ≤15 min after logout/reuse; Phase 4 clears client caches. Consider `users.sessions_invalid_before` with password reset later.
@@ -133,10 +133,11 @@ Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's in
 ---
 
 ## 🧪 Phase 6: Automated Testing Suite
-- [ ] Finalize backend pytest suite covering edge cases and security boundaries.
-- [ ] Implement Vitest component tests for language switching and form inputs.
-- [ ] Set up test coverage reporting.
-- [ ] Consider opt-in integration markers, explicit `python-dotenv` test dependency, and coverage of `get_db` exception cleanup, CORS preflight, and security headers.
+- [x] Finalize backend pytest suite covering edge cases and security boundaries (99 tests; JWT forgery, cookies, route inventory, rollback, proven concurrency races, log redaction, CORS/headers, admin regressions).
+- [x] Implement Vitest tests for language switching, forms, guards, cross-tab sign-out, logout, admin states and dialog focus (45 tests).
+- [x] Set up coverage reporting (pytest-cov with greenlet tracing; @vitest/coverage-v8); reported, not enforced.
+- [x] Add folder-based `unit`/`integration` markers, explicit `python-dotenv` and `pytest-cov` dev pins, `get_db` rollback/connection-release, CORS preflight and security-header tests, and a unit-tested `_test` database guard.
+- [ ] Optional: tests for the seed CLI entry point and race-only `IntegrityError` branches (bootstrap, registration) if those paths change.
 
 ---
 

@@ -16,5 +16,13 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    // Reported, not enforced: coverage points at untested behaviour; it is not a target.
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/test/**', 'src/main.tsx', 'src/types/**', 'src/**/*.d.ts'],
+      reporter: ['text-summary', 'text', 'html'],
+      reportsDirectory: 'coverage',
+    },
   },
 })

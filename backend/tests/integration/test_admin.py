@@ -343,3 +343,74 @@ async def test_concurrent_superadmins_cannot_remove_each_other(test_database_url
             await db.execute(delete(AuditLog).where(AuditLog.user_id.in_(ids)))
             await db.execute(delete(User).where(User.id.in_(ids)))
         await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_disabled_admin_loses_access_and_responses_never_leak_secrets(admin_env):
+    client, factory, _ = admin_env
+    root = await make_user(factory, "root@example.com", "superadmin")
+    admin = await make_user(factory, "admin@example.com", "admin")
+    root_headers = await bearer(client, "root@example.com")
+    admin_headers = await bearer(client, "admin@example.com")
+    # Generate refresh activity so audit rows and token rows exist.
+    await client.post(
+        "/api/v1/auth/login", json={"email": "admin@example.com", "password": PASSWORD}
+    )
+    raw = client.cookies.get(REFRESH_COOKIE)
+    assert (await client.post("/api/v1/auth/refresh", headers=CSRF)).status_code == 200
+    client.cookies.clear()
+
+    bodies = [
+        (await client.get(path, headers=root_headers)).text
+        for path in ("/api/v1/admin/users", "/api/v1/admin/stats", "/api/v1/admin/audit-logs")
+    ]
+    async with factory() as db:
+        digests = list(await db.scalars(select(RefreshToken.token_hash)))
+        hashes = list(await db.scalars(select(User.hashed_password)))
+    for body in bodies:
+        for secret in [raw, PASSWORD, *digests, *hashes]:
+            assert secret not in body
+        assert "hashed_password" not in body and "token_hash" not in body
+
+    disabled = await client.patch(
+        f"/api/v1/admin/users/{admin.id}", json={"is_active": False}, headers=root_headers
+    )
+    assert disabled.status_code == 200
+    assert (await client.get("/api/v1/admin/users", headers=admin_headers)).status_code == 401
+    # The disabled admin cannot act on anyone, including via a still-valid access token.
+    attempt = await client.patch(
+        f"/api/v1/admin/users/{root.id}", json={"is_active": False}, headers=admin_headers
+    )
+    assert attempt.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_invalid_role_names_and_last_superadmin_rollback(admin_env, monkeypatch):
+    client, factory, _ = admin_env
+    await make_user(factory, "root@example.com", "superadmin")
+    other = await make_user(factory, "root2@example.com", "superadmin")
+    headers = await bearer(client, "root@example.com")
+    for roles in ([" "], ["x" * 51], ["user"] * 11):
+        response = await client.patch(
+            f"/api/v1/admin/users/{other.id}", json={"roles": roles}, headers=headers
+        )
+        assert response.status_code == 422, roles
+
+    # The invariant is unreachable through the API while the actor is itself an active
+    # superadmin; force it to prove the refused change is fully rolled back.
+    async def no_superadmins_left(db):
+        return 0
+
+    monkeypatch.setattr(admin_service, "_active_superadmins", no_superadmins_left)
+    refused = await client.patch(
+        f"/api/v1/admin/users/{other.id}", json={"roles": ["user"]}, headers=headers
+    )
+    assert refused.status_code == 409
+    async with factory() as db:
+        roles = set(
+            await db.scalars(select(Role.name).join(UserRole).where(UserRole.user_id == other.id))
+        )
+        audits = await db.scalar(
+            select(func.count()).select_from(AuditLog).where(AuditLog.action == "admin.user_update")
+        )
+    assert roles == {"superadmin"} and audits == 0

@@ -10,13 +10,13 @@ This file tracks every AI agent session, modified files, verification performed,
 
 ## 📋 Session Log
 
-### 🔹 2026-09-24: v1.0.0 release-candidate audit and template preparation
+### 🔹 2026-09-24: v1.0.0 release audit, architecture freeze and publication
 
 - **Scope:** Audited shipped code and accepted ADRs against docs, clone steps, Git, security boundaries, integrations, dependencies, CI and public-template hygiene. No new product feature or roadmap phase.
 - **Changes:** Rewrote README and current architecture/auth/database/security/folder/technology/vision guides to match code; added customization guide and release notes; sanitized tracked private machine context; aligned backend/frontend package metadata to 1.0.0; added ADR 016 and updated `.ai/` state and durable handoff. Existing Git history was not rewritten.
-- **Verification:** Backend 91 unit tests and 136 full PostgreSQL tests (95% coverage), Ruff lint/format, pip check and guarded Alembic drift passed. Frontend 54 Vitest tests (97.91% lines, 90.51% branches), typecheck, lint and build passed. Full npm audit: 8 accepted findings; production high gate: exit 0 with 2 moderate. Docker CLI absent locally; previous GitHub container workflow passed for Phase 8 code SHA `10de09c`. Read-only security review found no confirmed high/critical application defect. Post-commit CI must be checked before tagging.
+- **Verification:** Backend 91 unit tests and 136 full PostgreSQL tests (95% coverage), Ruff lint/format, pip check and guarded Alembic drift passed. Frontend 54 Vitest tests (97.91% lines, 90.51% branches), typecheck, lint and build passed. Full npm audit: 8 accepted findings; production high gate: exit 0 with 2 moderate. Docker CLI absent locally; the release-code GitHub container workflow for `14598e9` passed. Read-only security review found no confirmed high/critical application defect.
 - **Freeze:** Recorded the current architecture as the stable v1 baseline. ADR 016 defines patch bug fixes (`1.0.x`), compatible reusable improvements (`1.x.0`), and breaking architecture changes (`2.0.0`); product features belong in clones.
-- **Release state:** Code commit `14598e9` was pushed normally. All three workflows passed for that SHA: backend 136 tests/95% coverage, frontend checks, and healthy production stack with smoke test. GitHub is public and template-enabled. This turn will publish the annotated tag and GitHub release after committing the freeze state.
+- **Release state:** Freeze commit `462a5bb` was pushed normally. All three workflows passed for code SHA `14598e9`: backend 136 tests/95% coverage, frontend checks, and healthy production stack with smoke test. Annotated tag `v1.0.0` was pushed and the [GitHub release](https://github.com/barry762vf/abdullah-dev-starter/releases/tag/v1.0.0) published. GitHub is public and template-enabled.
 
 
 ### 🔹 2026-09-24: Phase 8 reusable extension slots

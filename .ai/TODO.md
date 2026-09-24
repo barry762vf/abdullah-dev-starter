@@ -10,7 +10,7 @@
 - [x] Release audit: 136 backend tests (95% coverage), 54 frontend tests, local checks and all GitHub workflows green for release code commit `14598e9`.
 - [x] Freeze the current architecture as the reusable v1 baseline and document semver policy.
 - [x] GitHub repository is public and template mode is enabled.
-- [ ] Create and publish the annotated `v1.0.0` tag and GitHub release.
+- [x] Create and publish the annotated `v1.0.0` tag and GitHub release from stable freeze commit `462a5bb`.
 
 ## Future version improvement
 

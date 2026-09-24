@@ -26,4 +26,4 @@ The v1 architecture is the stable reusable starter baseline. Bug fixes use patch
 
 GitHub repository is **public** and **template-enabled**. The current tree has no tracked environment secrets, generated output or personal absolute paths. Earlier public Git history may still contain removed personal context; history was not rewritten. Cloudflare/Railway live checks, WAF settings and optional provider calls are deployment-specific.
 
-Package metadata is `1.0.0`. The annotated `v1.0.0` tag is the canonical release identifier. The release-preparation code commit and CI are verified; create the tag and GitHub release as the final publication step.
+Package metadata is `1.0.0`. The annotated `v1.0.0` tag and GitHub release are published from final freeze commit `462a5bb`: [Abdullah Developer Kit v1.0.0](https://github.com/barry762vf/abdullah-dev-starter/releases/tag/v1.0.0). GitHub remains public and template-enabled.

@@ -16,13 +16,16 @@
     "loading": "Loading…",
     "email": "Email address",
     "password": "Password",
-    "fullName": "Full name"
+    "fullName": "Full name",
+    "close": "Close",
+    "cancel": "Cancel"
   },
   "nav": {
     "home": "Overview",
     "dashboard": "Dashboard",
     "workspace": "Workspace",
-    "foundation": "Foundation"
+    "foundation": "Foundation",
+    "admin": "Administration"
   },
   "home": {
     "eyebrow": "Your starting point",
@@ -74,6 +77,97 @@
     "unauthorizedTitle": "Sign in required",
     "unauthorizedBody": "Sign in to open this page.",
     "notFoundTitle": "Page not found",
-    "notFoundBody": "The page you requested does not exist."
+    "notFoundBody": "The page you requested does not exist.",
+    "forbiddenTitle": "Access denied",
+    "forbiddenBody": "Your account does not have permission to open this page."
+  },
+  "admin": {
+    "eyebrow": "Control panel",
+    "title": "Administration",
+    "description": "Review accounts, access and recent security activity.",
+    "nav": {
+      "label": "Administration sections",
+      "overview": "Overview",
+      "users": "Users",
+      "audit": "Audit log"
+    },
+    "roles": {
+      "superadmin": "Superadmin",
+      "admin": "Admin",
+      "user": "User"
+    },
+    "stats": {
+      "usersTotal": "Total accounts",
+      "usersTotalHint": "Every registered account.",
+      "usersActive": "Active accounts",
+      "usersActiveHint": "Accounts that can sign in.",
+      "usersDisabled": "Disabled accounts",
+      "usersDisabledHint": "Accounts blocked by an administrator.",
+      "usersVerified": "Verified accounts",
+      "usersVerifiedHint": "Accounts marked as verified.",
+      "activeSessions": "Active sessions",
+      "activeSessionsHint": "Unexpired, unrevoked sign-in sessions.",
+      "rolesTitle": "Accounts by role"
+    },
+    "users": {
+      "title": "Users",
+      "search": "Search",
+      "searchPlaceholder": "Name or email",
+      "roleFilter": "Role",
+      "allRoles": "All roles",
+      "user": "User",
+      "roles": "Roles",
+      "status": "Status",
+      "joined": "Joined",
+      "actions": "Actions",
+      "active": "Active",
+      "disabled": "Disabled",
+      "you": "you",
+      "disable": "Disable",
+      "enable": "Enable",
+      "disableFor": "Disable {{name}}",
+      "enableFor": "Enable {{name}}",
+      "roleFor": "Role for {{name}}",
+      "noActions": "No actions available",
+      "emptyTitle": "No users found",
+      "emptyBody": "Try a different search or role."
+    },
+    "confirm": {
+      "disableTitle": "Disable this account?",
+      "disableBody": "{{name}} will be signed out and cannot sign in until the account is enabled again.",
+      "roleTitle": "Change role?",
+      "roleBody": "Change {{name}} from {{from}} to {{to}}. This changes what the account can access immediately.",
+      "changeRole": "Change role"
+    },
+    "errors": {
+      "forbidden": "You do not have permission to make this change.",
+      "notFound": "This account no longer exists.",
+      "lastSuperadmin": "At least one active superadmin must remain.",
+      "generic": "The change could not be saved. Please try again."
+    },
+    "audit": {
+      "title": "Audit log",
+      "actionFilter": "Action",
+      "allActions": "All actions",
+      "time": "Time",
+      "action": "Action",
+      "actor": "Actor",
+      "target": "Target",
+      "ip": "IP address",
+      "userAgent": "User agent",
+      "details": "Details",
+      "detailsFor": "Details for {{action}}",
+      "detailsTitle": "Audit event",
+      "system": "System",
+      "emptyTitle": "No audit events",
+      "emptyBody": "Security events will appear here."
+    },
+    "pagination": {
+      "status": "Page {{page}} of {{pages}} · {{total}} total",
+      "previous": "Previous",
+      "next": "Next",
+      "users": "Users pages",
+      "audit": "Audit log pages"
+    }
   }
 }

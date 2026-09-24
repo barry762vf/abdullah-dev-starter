@@ -76,7 +76,7 @@ sequenceDiagram
 - `POST /api/v1/auth/login` returns a sanitized profile and sets `access_token` (15 minutes, path `/api/v1`) and `refresh_token` (14 days, path `/api/v1/auth`) cookies. Both are HttpOnly and SameSite=Lax; Secure follows `COOKIE_SECURE`, which must be true outside development.
 - `POST /api/v1/auth/refresh` rotates the refresh cookie and returns a profile. `POST /api/v1/auth/logout` revokes the presented refresh session, clears both cookies, and returns `204`. Both routes require `X-Requested-With: XMLHttpRequest`; this custom header and the explicit CORS origin allowlist provide the CSRF check for cookie requests.
 - `GET /api/v1/users/me` returns the current profile. `PATCH /api/v1/users/me` updates only `full_name` and requires the same custom header when authenticated by cookie. `Authorization: Bearer <access JWT>` is supported on protected routes, including PATCH; refresh and logout use the HttpOnly refresh cookie.
-- Access JWTs contain `sub`, `type`, `iat`, and `exp`; no role claims are issued. Current roles are loaded from PostgreSQL. A `superadmin` role satisfies any role guard; other roles must be explicitly allowed. The API does not expose admin-management routes until Phase 5.
+- Access JWTs contain `sub`, `type`, `iat`, and `exp`; no role claims are issued. Current roles are loaded from PostgreSQL. A `superadmin` role satisfies any role guard; other roles must be explicitly allowed. Phase 5 administration routes are listed under "Administration API" below.
 - Run `python -m app.core.seed` from `backend/` to seed roles. To create the first superadmin, temporarily provide a valid `INITIAL_ADMIN_EMAIL` and a unique 12–128-character `INITIAL_ADMIN_PASSWORD`, then run `python -m app.core.seed --bootstrap-admin`. The command uses a PostgreSQL transaction lock and never resets an existing superadmin. Remove the bootstrap password afterward; ordinary application startup does not require it.
 
 ### Browser refresh coordination contract (Phase 4 implementation requirement)
@@ -131,6 +131,17 @@ async def list_users(
 ```
 
 ---
+
+### Administration API (Phase 5, ADR 013)
+
+| Endpoint | Allowed | Notes |
+| :--- | :--- | :--- |
+| `GET /api/v1/admin/users` | admin, superadmin | `page`, `page_size` (≤100), case-insensitive `search` over email/name (wildcards are literal), `role` filter. Newest first. |
+| `PATCH /api/v1/admin/users/{id}` | admin, superadmin | `is_active`, `is_verified`, `roles` (full replacement). Roles and administrator accounts: superadmin only. Never your own account. 409 if no active superadmin would remain. Disabling revokes refresh sessions. |
+| `GET /api/v1/admin/stats` | admin, superadmin | `users_total/active/disabled/verified`; accounts per role; `active_sessions` = unrevoked, unexpired refresh tokens (one per signed-in browser/device session). |
+| `GET /api/v1/admin/audit-logs` | admin, superadmin | Paginated, newest first, optional exact `action` filter; actor email joined; user agent and details returned as stored data. |
+
+Every effective admin change writes one `admin.user_update` audit row. Clients must render audit and user data as text, never as HTML.
 
 ## 4. Frontend Route Guards & Role-Gated UI
 

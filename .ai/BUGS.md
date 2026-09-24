@@ -60,6 +60,26 @@ Whenever a bug, regression, or environment fault is identified, record it immedi
 
 ## 3. Resolved Bugs
 
+### 🐛 BUG-015: Admin table sr-only labels widened the mobile page
+- **Date Discovered:** 2026-09-24
+- **Severity:** Low
+- **Component:** Frontend admin tables
+- **Symptoms:** At 375 px the admin users page scrolled horizontally to 561 px even though the table was inside an `overflow-x-auto` region.
+- **Root Cause:** Absolutely positioned `sr-only` labels inside the wide table had no positioned ancestor within the scroll region, so they extended the document.
+- **Fix Applied:** Table scroll regions are `relative`.
+- **Verification:** Live browser measurement: users and audit pages at 375 px have document width 375 in Arabic and English.
+- **Status:** Resolved
+
+### 🐛 BUG-016: Last-superadmin check blocked unrelated admin changes
+- **Date Discovered:** 2026-09-24
+- **Severity:** Medium (caught before commit)
+- **Component:** `backend/app/services/admin_service.py`
+- **Symptoms:** On an installation without any superadmin, an admin disabling an ordinary user received 409.
+- **Root Cause:** The invariant was evaluated after every change instead of only changes that remove an active superadmin.
+- **Fix Applied:** The check runs only when the target currently holds `superadmin` and loses it or is disabled.
+- **Verification:** `test_admin_status_change_is_immediate_revokes_sessions_and_is_audited` (no superadmin present) and the concurrent-demotion test pass.
+- **Status:** Resolved
+
 ### 🐛 BUG-014: Logout signal emitted after releasing the session Web Lock
 - **Date Discovered:** 2026-09-24
 - **Severity:** Low

@@ -9,9 +9,11 @@ import { ApiError, login } from '../lib/api'
 // Status messages travel as translation keys so they follow a later language switch.
 const MESSAGE_KEYS = new Set(['auth.sessionExpired', 'auth.registerSuccess'])
 
+// Exact allowlist of protected routes; anything else falls back to the dashboard (no open redirect).
+const DESTINATIONS = new Set(['/dashboard', '/admin', '/admin/users', '/admin/audit-logs'])
+
 function destination(value: unknown): string {
-  // Only the currently protected route can be a post-login destination.
-  return value === '/dashboard' ? value : '/dashboard'
+  return typeof value === 'string' && DESTINATIONS.has(value) ? value : '/dashboard'
 }
 
 export function LoginPage() {

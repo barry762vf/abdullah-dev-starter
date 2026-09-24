@@ -30,6 +30,10 @@ Phase 4 passed 25 frontend tests, TypeScript, lint, and a static production buil
 
 Lessons from finishing Phase 4: broadcast cross-tab session signals while the Web Lock is still held, or a queued refresh can act before it learns of a sign-out. Apply the saved text direction before the first paint. Bilingual modal menus need real dialog focus handling.
 
+Phase 5 adds administration (ADR 013). The backend is the only security boundary: one router-level role guard covers every admin endpoint. Admins can view users, statistics and audit logs, and can enable, disable or verify ordinary accounts. Only a superadmin can change roles or manage other administrators, and no one can modify their own account through the admin API. Privileged changes are serialized with the same PostgreSQL advisory lock as the superadmin bootstrap and re-check the actor inside it, so at least one active superadmin always remains even when two superadmins act at the same moment. Disabling an account also ends its refresh sessions, and every effective change is recorded in the audit log. The frontend role guard and hidden navigation are conveniences only, and audit data is always rendered as plain text.
+
+Lessons from Phase 5: invariants such as "at least one active superadmin" must be enforced only by the changes that can break them, or they block unrelated work; and absolutely positioned screen-reader text inside horizontally scrolling tables needs a positioned container, or it widens mobile pages.
+
 ## Next direction
 
-Implement Phase 5 administration with backend authorization as the source of truth. Build and verify the edge proxy before deployment; resolve the remaining production ingress, rate-limit, and dependency gates. The current task state is in `.ai/AGENT_HANDOFF.md` and `.ai/CURRENT_STATE.md`.
+Continue with Phase 6 automated tests and coverage. Build and verify the edge proxy before deployment; resolve the remaining production ingress, rate-limit, and dependency gates. The current task state is in `.ai/AGENT_HANDOFF.md` and `.ai/CURRENT_STATE.md`.

@@ -1,16 +1,22 @@
-import { useEffect, useRef, type KeyboardEvent } from 'react'
-import { House, LayoutDashboard, X } from 'lucide-react'
+import { House, LayoutDashboard, ShieldCheck, X } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { ADMIN_ROLES, hasRole } from '../../features/admin/roles'
+import { useCurrentUser } from '../../features/auth/useCurrentUser'
+import { useDialogFocus } from '../../hooks/useDialogFocus'
 import { useUiStore } from '../../stores/uiStore'
 
 const links = [
   { to: '/', key: 'nav.home', icon: House, end: true },
   { to: '/dashboard', key: 'nav.dashboard', icon: LayoutDashboard, end: false },
-] as const
+]
+// Shown only to administrators for convenience; the admin API itself enforces access.
+const adminLink = { to: '/admin', key: 'nav.admin', icon: ShieldCheck, end: false }
 
 function SidebarContent({ close }: { close: () => void }) {
   const { t } = useTranslation()
+  const user = useCurrentUser().data
+  const visible = hasRole(user, ADMIN_ROLES) ? [...links, adminLink] : links
   return (
     <>
       <div className="flex h-20 items-center justify-between border-b border-slate-200/70 px-6 dark:border-slate-700">
@@ -25,7 +31,7 @@ function SidebarContent({ close }: { close: () => void }) {
       <nav aria-label={t('nav.workspace')} className="flex-1 px-4 py-7">
         <p className="px-3 text-[11px] font-bold uppercase tracking-[0.17em] text-muted dark:text-slate-400">{t('nav.workspace')}</p>
         <div className="mt-4 space-y-1.5">
-          {links.map(({ to, key, icon: Icon, end }) => (
+          {visible.map(({ to, key, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -47,37 +53,9 @@ function SidebarContent({ close }: { close: () => void }) {
   )
 }
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
-
 function MobileDrawer({ close }: { close: () => void }) {
   const { t } = useTranslation()
-  const panel = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    panel.current?.querySelector<HTMLElement>('button')?.focus()
-    return () => opener?.focus()
-  }, [])
-
-  function onKeyDown(event: KeyboardEvent<HTMLElement>) {
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      close()
-      return
-    }
-    if (event.key !== 'Tab' || !panel.current) return
-    // Keep keyboard focus inside the modal drawer.
-    const items = Array.from(panel.current.querySelectorAll<HTMLElement>(FOCUSABLE))
-    const first = items[0]
-    const last = items[items.length - 1]
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault()
-      last?.focus()
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault()
-      first?.focus()
-    }
-  }
+  const { ref: panel, onKeyDown } = useDialogFocus<HTMLElement>(close)
 
   return (
     <div className="fixed inset-0 z-40 md:hidden">

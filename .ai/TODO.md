@@ -122,12 +122,13 @@ Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's in
 ---
 
 ## 🛡️ Phase 5: Admin Dashboard & User Management
-- [ ] Implement backend admin endpoints (`/api/v1/admin/users`, `/stats`, `/audit-logs`).
-- [ ] Implement frontend `RoleGuard` restricting `/admin` to authorized roles.
-- [ ] Build admin dashboard overview with KPI metric cards.
-- [ ] Build user management data table (search, pagination, role change, status toggle).
-- [ ] Build audit log timeline viewer.
-- [ ] Add `user_roles.role_id` index if role-filtered user queries need it; preserve audit attribution when designing any hard-delete flow.
+- [x] Implement backend admin endpoints (`/api/v1/admin/users`, `PATCH /users/{id}`, `/stats`, `/audit-logs`) with ADR 013 authorization, advisory-lock invariant, audit rows and tests.
+- [x] Implement frontend `RoleGuard` restricting `/admin` to authorized roles (UX only).
+- [x] Build admin dashboard overview with KPI metric cards.
+- [x] Build user management data table (debounced search, role filter, pagination, superadmin role change, status toggle with confirmation).
+- [x] Build audit log viewer with action filter and text-only details dialog.
+- [x] Role filter uses `EXISTS` on the `user_roles` primary key (leading `user_id`); no extra `role_id` index needed yet. No hard-delete flow was added, so audit attribution is unchanged.
+- [ ] Optional later: audit refused (403) admin attempts; add a user-detail view or bulk actions only if a project needs them.
 
 ---
 

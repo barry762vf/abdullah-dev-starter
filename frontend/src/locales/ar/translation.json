@@ -16,13 +16,16 @@
     "loading": "جارٍ التحميل…",
     "email": "البريد الإلكتروني",
     "password": "كلمة المرور",
-    "fullName": "الاسم الكامل"
+    "fullName": "الاسم الكامل",
+    "close": "إغلاق",
+    "cancel": "إلغاء"
   },
   "nav": {
     "home": "نظرة عامة",
     "dashboard": "لوحة العمل",
     "workspace": "مساحة العمل",
-    "foundation": "الأساس"
+    "foundation": "الأساس",
+    "admin": "الإدارة"
   },
   "home": {
     "eyebrow": "نقطة البداية",
@@ -74,6 +77,97 @@
     "unauthorizedTitle": "يلزم تسجيل الدخول",
     "unauthorizedBody": "سجّل الدخول لفتح هذه الصفحة.",
     "notFoundTitle": "الصفحة غير موجودة",
-    "notFoundBody": "الصفحة التي طلبتها غير موجودة."
+    "notFoundBody": "الصفحة التي طلبتها غير موجودة.",
+    "forbiddenTitle": "الوصول مرفوض",
+    "forbiddenBody": "لا يملك حسابك صلاحية فتح هذه الصفحة."
+  },
+  "admin": {
+    "eyebrow": "لوحة التحكم",
+    "title": "الإدارة",
+    "description": "راجع الحسابات والصلاحيات والنشاط الأمني الأخير.",
+    "nav": {
+      "label": "أقسام الإدارة",
+      "overview": "نظرة عامة",
+      "users": "المستخدمون",
+      "audit": "سجل التدقيق"
+    },
+    "roles": {
+      "superadmin": "مشرف عام",
+      "admin": "مشرف",
+      "user": "مستخدم"
+    },
+    "stats": {
+      "usersTotal": "إجمالي الحسابات",
+      "usersTotalHint": "كل الحسابات المسجلة.",
+      "usersActive": "الحسابات النشطة",
+      "usersActiveHint": "الحسابات التي يمكنها تسجيل الدخول.",
+      "usersDisabled": "الحسابات المعطلة",
+      "usersDisabledHint": "حسابات أوقفها مشرف.",
+      "usersVerified": "الحسابات الموثقة",
+      "usersVerifiedHint": "حسابات مُعلَّمة بأنها موثقة.",
+      "activeSessions": "الجلسات النشطة",
+      "activeSessionsHint": "جلسات دخول سارية وغير ملغاة.",
+      "rolesTitle": "الحسابات حسب الدور"
+    },
+    "users": {
+      "title": "المستخدمون",
+      "search": "بحث",
+      "searchPlaceholder": "الاسم أو البريد الإلكتروني",
+      "roleFilter": "الدور",
+      "allRoles": "كل الأدوار",
+      "user": "المستخدم",
+      "roles": "الأدوار",
+      "status": "الحالة",
+      "joined": "تاريخ الانضمام",
+      "actions": "الإجراءات",
+      "active": "نشط",
+      "disabled": "معطل",
+      "you": "أنت",
+      "disable": "تعطيل",
+      "enable": "تفعيل",
+      "disableFor": "تعطيل {{name}}",
+      "enableFor": "تفعيل {{name}}",
+      "roleFor": "دور {{name}}",
+      "noActions": "لا توجد إجراءات متاحة",
+      "emptyTitle": "لا يوجد مستخدمون",
+      "emptyBody": "جرّب بحثًا أو دورًا مختلفًا."
+    },
+    "confirm": {
+      "disableTitle": "تعطيل هذا الحساب؟",
+      "disableBody": "سيُسجَّل خروج {{name}} ولن يتمكن من تسجيل الدخول حتى يُعاد تفعيل الحساب.",
+      "roleTitle": "تغيير الدور؟",
+      "roleBody": "تغيير دور {{name}} من {{from}} إلى {{to}}. يتغير ما يمكن للحساب الوصول إليه فورًا.",
+      "changeRole": "تغيير الدور"
+    },
+    "errors": {
+      "forbidden": "لا تملك صلاحية إجراء هذا التغيير.",
+      "notFound": "هذا الحساب لم يعد موجودًا.",
+      "lastSuperadmin": "يجب أن يبقى مشرف عام نشط واحد على الأقل.",
+      "generic": "تعذّر حفظ التغيير. حاول مجددًا."
+    },
+    "audit": {
+      "title": "سجل التدقيق",
+      "actionFilter": "الإجراء",
+      "allActions": "كل الإجراءات",
+      "time": "الوقت",
+      "action": "الإجراء",
+      "actor": "المنفّذ",
+      "target": "الهدف",
+      "ip": "عنوان IP",
+      "userAgent": "وكيل المستخدم",
+      "details": "التفاصيل",
+      "detailsFor": "تفاصيل {{action}}",
+      "detailsTitle": "حدث تدقيق",
+      "system": "النظام",
+      "emptyTitle": "لا توجد أحداث تدقيق",
+      "emptyBody": "ستظهر الأحداث الأمنية هنا."
+    },
+    "pagination": {
+      "status": "الصفحة {{page}} من {{pages}} · الإجمالي {{total}}",
+      "previous": "السابق",
+      "next": "التالي",
+      "users": "صفحات المستخدمين",
+      "audit": "صفحات سجل التدقيق"
+    }
   }
 }

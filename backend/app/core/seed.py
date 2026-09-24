@@ -13,6 +13,7 @@ from app.core.config import Settings, get_settings
 from app.core.database import create_engine, create_session_factory
 from app.core.security import hash_password_async
 from app.models import AuditLog, Role, User, UserRole
+from app.services.admin_service import PRIVILEGE_LOCK_KEY
 
 DEFAULT_ROLES = (
     ("superadmin", "Full platform administration"),
@@ -34,7 +35,7 @@ async def seed_roles(session: AsyncSession) -> None:
 
 async def bootstrap_superadmin(session: AsyncSession, settings: Settings) -> bool:
     """Create one initial superadmin while holding a transaction-scoped PostgreSQL lock."""
-    await session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": 389607175213})
+    await session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": PRIVILEGE_LOCK_KEY})
     existing = await session.scalar(
         select(User.id)
         .join(UserRole, UserRole.user_id == User.id)

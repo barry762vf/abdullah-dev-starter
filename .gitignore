@@ -34,3 +34,6 @@ Thumbs.db
 
 # Local database data
 pgdata/
+
+# Production deployment values (the .example template stays tracked)
+deploy/*.env

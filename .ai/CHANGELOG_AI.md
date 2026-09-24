@@ -10,6 +10,13 @@ This file tracks every AI agent session, modified files, verification performed,
 
 ## 📋 Session Log
 
+### 🔹 2026-09-24: Phase 7 production containerization and CI/CD
+- **Agent Role / ID:** Claude Code
+- **Implementation:** Non-root backend image with preflight and health check; unprivileged Nginx web image serving the SPA and the authenticated same-origin `/api/*` proxy with shared per-IP auth limits; `docker-compose.prod.yml` (migrate release job, internal network, read-only hardened containers); Cloudflare Pages Function proxy and `_headers`; `EdgeClientIPMiddleware` and explicit `CLIENT_IP_SOURCE`; PostgreSQL per-account login throttle; migration advisory lock; configurable pool and transaction-pooler mode; docs off outside development; bootstrap-password refusal; `no-store` API responses; 3 s readiness bound; `ENV_FILE`; GitHub Actions backend/frontend/containers workflows; `scripts/build.ps1`, `scripts/smoke-prod.sh`; ADR 014; DEPLOYMENT_STRATEGY rewritten.
+- **Verification:** Backend 118 passed (96% coverage), Ruff check/format, pip check, Alembic check. Frontend 54 passed (97.9% lines), typecheck, lint, build; audit 8 dev / production 2 moderate (accepted). Production stack built and run locally: 24/24 scripted proxy/cookie/auth checks, audit IP = real peer with spoofed headers ignored, bypass refused, only `web` published, non-root, read-only, docs hidden, one-off bootstrap and leftover-password refusal, SPA under CSP in the browser. Smoke script passed after final rebuild; stack torn down.
+- **Found and fixed:** BUG-017 (Uvicorn crash-loop instead of exit), BUG-018 (Nginx fail-open without config), BUG-019 (frozen-clock test flake).
+- **Next Task:** Phase 8 pluggable integration slots.
+
 ### 🔹 2026-09-24: Phase 6 automated regression suite
 - **Agent Role / ID:** Claude Code
 - **Backend (+49 tests, 50 → 99):** forged/incomplete JWTs and ignored role claims; unit-tested `_test` database guard (host/port/database comparison); CORS allowlist/preflight and security headers incl. production-only HSTS; route inventory for all non-public routes; deleted-user tokens; cookie attributes on login/logout; disabled-user refresh revoking every session; rollback after the conditional refresh UPDATE; secrets absent from logs on reuse/bootstrap; proven-concurrent refresh and bootstrap races (`pg_stat_activity` lock wait); bootstrap refusing existing accounts; name spoofing characters; `get_db` rollback and connection release; limiter window/bound; admin disable, secret-free admin responses, invalid roles and forced last-superadmin rollback.

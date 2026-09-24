@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
+from app.core.client_ip import EdgeClientIPMiddleware
 from app.core.config import Settings, get_settings
 from app.core.database import create_engine, create_session_factory
 from app.core.exceptions import handle_unexpected_error, register_exception_handlers
@@ -31,12 +32,19 @@ def _add_security_headers(response: Response, request: Request, settings: Settin
         )
     else:
         response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
-    if settings.environment == "production":
+    if request.url.path.startswith("/api/"):
+        # Authenticated JSON must never be stored by browsers or shared caches.
+        response.headers.setdefault("Cache-Control", "no-store")
+    if settings.environment != "development":
+        # Staging and production require HTTPS (COOKIE_SECURE and HTTPS origins are enforced).
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
+    if settings.environment != "development" and settings.initial_admin_password.get_secret_value():
+        # The bootstrap password belongs to the one-off bootstrap job, never the running API.
+        raise RuntimeError("Remove INITIAL_ADMIN_PASSWORD from the API environment after bootstrap")
     logger = configure_logging(settings.debug)
     engine = create_engine(settings)
 
@@ -47,7 +55,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         finally:
             await engine.dispose()
 
-    app = FastAPI(title="Abdullah Developer Core", debug=settings.debug, lifespan=lifespan)
+    docs = settings.docs_enabled
+    app = FastAPI(
+        title="Abdullah Developer Core",
+        debug=settings.debug,
+        lifespan=lifespan,
+        docs_url="/docs" if docs else None,
+        redoc_url="/redoc" if docs else None,
+        openapi_url="/openapi.json" if docs else None,
+    )
     app.state.settings = settings
     app.state.logger = logger
     app.state.engine = engine
@@ -91,6 +107,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "X-Requested-With", "X-CSRF-Token"],
     )
+    if settings.effective_client_ip_source == "edge_header":
+        # Outermost: refuse proxy bypass and set the client IP before logging, limits and audit.
+        app.add_middleware(
+            EdgeClientIPMiddleware, secret=settings.edge_proxy_secret.get_secret_value()
+        )
     return app
 
 

@@ -19,8 +19,8 @@ export default defineConfig({
     // Reported, not enforced: coverage points at untested behaviour; it is not a target.
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/test/**', 'src/main.tsx', 'src/types/**', 'src/**/*.d.ts'],
+      include: ['src/**/*.{ts,tsx}', 'functions/**/*.ts'],
+      exclude: ['src/test/**', 'functions/**/*.test.ts', 'src/main.tsx', 'src/types/**', 'src/**/*.d.ts'],
       reporter: ['text-summary', 'text', 'html'],
       reportsDirectory: 'coverage',
     },

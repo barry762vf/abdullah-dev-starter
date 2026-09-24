@@ -9,6 +9,7 @@ BASE = {
     "secret_key": "test-only-secret",
     "database_url": "postgresql+asyncpg://test:test@localhost:5432/test_db",
     "cors_origins": "http://localhost:5173,http://localhost:3000",
+    "client_ip_source": "peer",
 }
 
 
@@ -122,3 +123,63 @@ def test_staging_accepts_strong_configuration() -> None:
         cookie_secure=True,
     )
     assert settings.environment == "staging"
+
+
+STRONG = BASE | {
+    "secret_key": "a" * 64,
+    "cors_origins": "https://example.com",
+    "cookie_secure": True,
+}
+
+
+@pytest.mark.parametrize("environment", ["staging", "production"])
+def test_client_ip_source_must_be_explicit_outside_development(environment: str) -> None:
+    values = {key: value for key, value in STRONG.items() if key != "client_ip_source"}
+    with pytest.raises(ValidationError, match="CLIENT_IP_SOURCE"):
+        Settings(_env_file=None, **values, environment=environment)
+    assert (
+        Settings(_env_file=None, **values, environment="development").effective_client_ip_source
+        == "peer"
+    )
+
+
+@pytest.mark.parametrize("secret", ["", "short-secret"])
+def test_edge_mode_requires_a_strong_proxy_secret(secret: str) -> None:
+    for environment in ("development", "production"):
+        with pytest.raises(ValidationError, match="EDGE_PROXY_SECRET"):
+            Settings(
+                _env_file=None,
+                **(STRONG | {"client_ip_source": "edge_header", "edge_proxy_secret": secret}),
+                environment=environment,
+            )
+    edge = Settings(
+        _env_file=None,
+        **(STRONG | {"client_ip_source": "edge_header", "edge_proxy_secret": "s" * 32}),
+        environment="production",
+    )
+    assert "s" * 32 not in repr(edge)
+
+
+def test_api_docs_default_to_development_only() -> None:
+    assert Settings(_env_file=None, **BASE, environment="development").docs_enabled is True
+    assert Settings(_env_file=None, **STRONG, environment="production").docs_enabled is False
+    assert Settings(
+        _env_file=None, **STRONG, environment="production", api_docs_enabled=True
+    ).docs_enabled
+
+
+def test_env_file_can_be_disabled_for_containers(tmp_path, monkeypatch) -> None:
+    """ENV_FILE="" makes the process read only real environment variables."""
+    import importlib
+
+    from app.core import config
+
+    monkeypatch.setenv("ENV_FILE", "")
+    try:
+        reloaded = importlib.reload(config)
+        assert reloaded.ENV_FILE_PATH is None
+        monkeypatch.setenv("ENV_FILE", str(tmp_path / "custom.env"))
+        assert importlib.reload(config).ENV_FILE_PATH == str(tmp_path / "custom.env")
+    finally:
+        monkeypatch.delenv("ENV_FILE")
+        importlib.reload(config)

@@ -1,0 +1,94 @@
+# Self-hosted production topology (ADR 011/014):
+#   internet -> web (Nginx: SPA + same-origin /api/* proxy + per-IP auth limits)
+#            -> api (FastAPI, internal network only) -> db (PostgreSQL, internal network only)
+# Run:  docker compose --env-file deploy/production.env -f docker-compose.prod.yml up -d --build
+# TLS: terminate HTTPS in front of `web` (COOKIE_SECURE=true requires it); see DEPLOYMENT_STRATEGY.
+name: abdullah-core-prod
+
+x-api-environment: &api-environment
+  ENVIRONMENT: production
+  SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY (64 hex characters)}
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:?}
+  CORS_ORIGINS: ${PUBLIC_ORIGIN:?Set PUBLIC_ORIGIN (https://...)}
+  COOKIE_SECURE: "true"
+  CLIENT_IP_SOURCE: edge_header
+  EDGE_PROXY_SECRET: ${EDGE_PROXY_SECRET:?Set EDGE_PROXY_SECRET (32+ characters)}
+  DB_POOL_SIZE: ${DB_POOL_SIZE:-5}
+  DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-5}
+  WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  tmpfs: [/tmp]
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:?}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  # One release job per deploy: schema migrations (serialized by an advisory lock) and the
+  # idempotent baseline role seed. API workers never migrate on startup.
+  migrate:
+    build: ./backend
+    image: abdullah-core-api:local
+    command: ["sh", "-c", "alembic upgrade head && python -m app.core.seed"]
+    environment: *api-environment
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [backend]
+    restart: "no"
+    <<: *hardening
+
+  api:
+    image: abdullah-core-api:local
+    environment: *api-environment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [backend]
+    restart: unless-stopped
+    <<: *hardening
+
+  web:
+    build: ./frontend
+    image: abdullah-core-web:local
+    environment:
+      API_UPSTREAM: http://api:8000
+      EDGE_PROXY_SECRET: ${EDGE_PROXY_SECRET:?}
+    ports:
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [backend, edge]
+    restart: unless-stopped
+    <<: *hardening
+    # Rendered nginx config and caches need writable scratch space on a read-only filesystem.
+    tmpfs:
+      - /tmp:uid=101,gid=101
+      - /etc/nginx/conf.d:uid=101,gid=101
+      - /var/cache/nginx:uid=101,gid=101
+
+networks:
+  # No published ports and no route to the host: the API is reachable only through `web`.
+  backend:
+    internal: true
+  edge: {}
+
+volumes:
+  postgres_prod_data:

@@ -1,19 +1,25 @@
-"""Validated runtime settings loaded from the repository's root .env file."""
+"""Validated runtime settings from the environment and, outside containers, the root .env file."""
 
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import SecretStr, field_validator, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-ROOT_DIR = Path(__file__).resolve().parents[3]
+_PARENTS = Path(__file__).resolve().parents
+ROOT_DIR = _PARENTS[3] if len(_PARENTS) > 3 else _PARENTS[-1]
+# ENV_FILE overrides the file path; an empty ENV_FILE (set in the container image) reads only
+# real environment variables, so an accidentally copied .env can never configure production.
+_ENV_FILE = os.environ.get("ENV_FILE")
+ENV_FILE_PATH = (_ENV_FILE or None) if _ENV_FILE is not None else ROOT_DIR / ".env"
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=ROOT_DIR / ".env",
+        env_file=ENV_FILE_PATH,
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -24,6 +30,19 @@ class Settings(BaseSettings):
     database_url: SecretStr
     cors_origins: str = "http://localhost:5173"
     cookie_secure: bool = False
+    # How the client IP for rate limits and audit is determined (ADR 014). Required outside
+    # development: "peer" = socket peer; "edge_header" = X-Edge-Client-IP from an
+    # authenticated proxy.
+    client_ip_source: Literal["peer", "edge_header"] | None = None
+    edge_proxy_secret: SecretStr = SecretStr("")
+    # OpenAPI/Swagger: on by default only in development.
+    api_docs_enabled: bool | None = None
+    # Per-process pool. Size x workers x instances must stay below the database connection limit.
+    db_pool_size: int = Field(default=5, ge=1, le=100)
+    db_max_overflow: int = Field(default=5, ge=0, le=100)
+    db_pool_timeout: float = Field(default=10, gt=0, le=60)
+    # true for PgBouncer/Supavisor transaction mode (for example Supabase port 6543).
+    database_transaction_pooler: bool = False
 
     # Read only by the explicit administrator bootstrap command.
     initial_admin_email: str = ""
@@ -73,8 +92,17 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_non_development_security(self) -> "Settings":
+        if (
+            self.client_ip_source == "edge_header"
+            and len(self.edge_proxy_secret.get_secret_value()) < 32
+        ):
+            raise ValueError(
+                "EDGE_PROXY_SECRET must have at least 32 characters in edge_header mode"
+            )
         if self.environment == "development":
             return self
+        if self.client_ip_source is None:
+            raise ValueError("Set CLIENT_IP_SOURCE to peer or edge_header outside development")
         key = self.secret_key.get_secret_value()
         if len(key) < 64 or any(char not in "0123456789abcdefABCDEF" for char in key):
             raise ValueError(
@@ -91,6 +119,16 @@ class Settings(BaseSettings):
     @property
     def allowed_origins(self) -> list[str]:
         return self.cors_origins.split(",")
+
+    @property
+    def effective_client_ip_source(self) -> str:
+        return self.client_ip_source or "peer"
+
+    @property
+    def docs_enabled(self) -> bool:
+        if self.api_docs_enabled is not None:
+            return self.api_docs_enabled
+        return self.environment == "development"
 
 
 @lru_cache

@@ -452,3 +452,57 @@ async def test_spoofing_and_control_characters_in_names_are_rejected(env, name: 
     await login(client, "profile@example.com")
     updated = await client.patch("/api/v1/users/me", json={"full_name": name}, headers=CSRF)
     assert updated.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_account_login_throttle_is_shared_and_resets(test_database_url: str):
+    """Counts come from PostgreSQL, so every worker/instance sees the same limit.
+
+    Uses committed rows (cleaned up): inside one rollback transaction PostgreSQL's now() is
+    frozen, which would make every audit row share one timestamp.
+    """
+    app = create_app(settings_for(test_database_url))
+    app.state.auth_rate_limiter.check = lambda *args: None  # isolate from the per-IP limiter
+    factory = app.state.session_factory
+    emails = [f"{name}-{uuid4().hex[:8]}@example.com" for name in ("target", "bystander")]
+    try:
+        async with factory() as db:
+            await seed.seed_roles(db)
+            await db.commit()
+        user = await add_user(factory, emails[0])
+        await add_user(factory, emails[1])
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+
+            async def attempt(email: str, password: str) -> int:
+                body = {"email": email, "password": password}
+                return (await client.post("/api/v1/auth/login", json=body)).status_code
+
+            for _ in range(auth_service.LOGIN_FAILURE_LIMIT - 1):
+                assert await attempt(emails[0], "wrong-password-x") == 401
+            assert await attempt(emails[0], PASSWORD) == 200  # success resets the count
+            for _ in range(auth_service.LOGIN_FAILURE_LIMIT):
+                assert await attempt(emails[0], "wrong-password-x") == 401
+            # The correct password is refused while throttled, before any password check.
+            assert await attempt(emails[0], PASSWORD) == 429
+            assert await attempt(emails[1], PASSWORD) == 200  # other accounts unaffected
+            async with factory() as db:
+                throttled = await db.scalar(
+                    select(func.count())
+                    .select_from(AuditLog)
+                    .where(AuditLog.action == "auth.login_throttled", AuditLog.user_id == user.id)
+                )
+                await db.execute(
+                    AuditLog.__table__.update()
+                    .where(AuditLog.user_id == user.id, AuditLog.action == "auth.login_failed")
+                    .values(created_at=func.now() - timedelta(minutes=16))
+                )
+                await db.commit()
+            assert throttled == 1
+            assert await attempt(emails[0], PASSWORD) == 200  # window expired
+    finally:
+        async with factory.begin() as db:
+            ids = (await db.scalars(select(User.id).where(User.email.in_(emails)))).all()
+            await db.execute(delete(AuditLog).where(AuditLog.user_id.in_(ids)))
+            await db.execute(delete(User).where(User.id.in_(ids)))
+        await app.state.engine.dispose()

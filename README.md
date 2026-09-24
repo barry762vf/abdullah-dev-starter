@@ -31,6 +31,10 @@ From `frontend/`, run `npm run test`, `npm run typecheck`, `npm run lint`, and `
 
 Check the container with `docker compose ps db`. Stop it with `docker compose down` (the named volume remains).
 
+## Production
+
+Production uses one public origin: the `web` image serves the SPA and proxies `/api/*` to the API, which is reachable only through that proxy. Copy `deploy/production.env.example` to `deploy/production.env`, fill it, then run `docker compose --env-file deploy/production.env -f docker-compose.prod.yml up -d --build --wait` and `bash scripts/smoke-prod.sh`. Cloudflare Pages + Railway, migrations, the admin bootstrap, client-IP handling and rate limits are described in [the deployment strategy](docs/DEPLOYMENT_STRATEGY.md).
+
 ## Documentation
 
 - [Project vision](docs/PROJECT_VISION.md)

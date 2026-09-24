@@ -2,6 +2,7 @@
 
 import asyncio
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
@@ -10,6 +11,9 @@ from app.models import Base
 
 config = context.config
 target_metadata = Base.metadata
+# Session-level lock so two release jobs (or a retried deploy) never migrate concurrently.
+# Needs a direct or session-pooled connection; do not migrate through a transaction pooler.
+MIGRATION_LOCK_KEY = 389607175214
 
 
 def database_url() -> str:
@@ -30,9 +34,15 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
-    with context.begin_transaction():
-        context.run_migrations()
+    connection.execute(text("SELECT pg_advisory_lock(:key)"), {"key": MIGRATION_LOCK_KEY})
+    connection.commit()
+    try:
+        context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
+        with context.begin_transaction():
+            context.run_migrations()
+    finally:
+        connection.execute(text("SELECT pg_advisory_unlock(:key)"), {"key": MIGRATION_LOCK_KEY})
+        connection.commit()
 
 
 async def run_migrations_online() -> None:

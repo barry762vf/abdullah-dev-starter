@@ -1,0 +1,4 @@
+# Container scripts and templates run inside Linux images: keep LF on every checkout.
+*.sh text eol=lf
+*.template text eol=lf
+Dockerfile text eol=lf

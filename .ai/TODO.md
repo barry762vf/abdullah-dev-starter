@@ -82,7 +82,7 @@ Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's in
 **Before any public deployment:**
 - [x] MEDIUM-01: Offload Argon2 hashing/verification for registration, login and bootstrap to a bounded AnyIO worker pool; retain the dummy-hash path.
 - [x] MEDIUM-02 checkpoint: Confirm Uvicorn default forwarding behavior, pin `--no-proxy-headers` for local direct startup, and document exact production proxy requirements. Live ingress configuration remains Phase 7.
-- [ ] MEDIUM-03 deployment extension: Add shared/edge and account-aware abuse controls before claiming production resistance to IP rotation, IPv6 churn or the bounded-store eviction; keep the current starter limiter as best effort.
+- [x] MEDIUM-03 deployment extension (Phase 7): shared per-IP limits at the proxy/edge (Nginx `limit_req` / Cloudflare WAF rules) plus a PostgreSQL per-account login throttle shared by all workers; the in-process limiter remains local defence in depth.
 - [x] MEDIUM-04: Require explicit `ENVIRONMENT` and test missing-mode startup failure.
 
 **Test hardening:**
@@ -105,7 +105,7 @@ Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's in
 - [x] Choose one-origin SPA/API topology in ADR 011 before wiring browser cookie auth (BUG-008 resolved at architecture level).
 - [x] Implement the `docs/AUTH_STRATEGY.md` browser refresh contract: in-tab single-flight, Web Lock across tabs, `/users/me` probe, non-secret BroadcastChannel signals, no refresh retry after ambiguous failure, and logout cache clearing.
 - [x] Use a relative `/api/v1` client URL and Vite `/api/*` development proxy; verify the local route against a live FastAPI health endpoint.
-- [ ] Implement and test the production same-origin Pages `/api/*` edge route before deployment (Phase 7 gate).
+- [x] Implement and test the production same-origin `/api/*` route: Nginx `web` image (run and smoke-tested) and Cloudflare Pages Function (unit-tested). Live Cloudflare smoke stays a per-deployment step (DEPLOYMENT_STRATEGY §8).
 - [x] Scaffold `frontend/` with React 18, Vite 5, and TypeScript.
 - [x] Configure Tailwind CSS logical properties and Cairo + Inter fonts with system fallbacks.
 - [x] Set up `i18next` with Arabic (`locales/ar/translation.json`) and English (`locales/en/translation.json`).
@@ -142,17 +142,19 @@ Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's in
 ---
 
 ## 🚢 Phase 7: Production Containerization & CI/CD
-- [ ] Configure exact trusted proxy IPs, strip untrusted forwarding headers, and add a shared auth rate limiter before multi-worker or multi-instance deployment.
-- [ ] Verify the production Pages `/api/*` proxy preserves paths, methods, cookies and `Set-Cookie`, avoids API caching, and records the real client IP only through a trusted ingress; otherwise use edge rate limiting and mark app IP audit as proxy-derived.
-- [ ] Assert `ENVIRONMENT=production`, strong secret, secure cookies, HTTPS origin and debug off in deployment automation; do not deploy an unchanged local `.env`.
-- [ ] Resolve or formally accept BUG-013 by reviewing ADR 002's pinned Vite 5 / React Router 6 / Vitest 2 versions against npm advisories before shared development or public deployment; retest after any major upgrade.
-- [ ] Write multi-stage, non-root `backend/Dockerfile`.
-- [ ] Write multi-stage Nginx `frontend/Dockerfile`.
-- [ ] Configure GitHub Actions workflow `backend-ci.yml`.
-- [ ] Configure GitHub Actions workflow `frontend-ci.yml`.
-- [ ] Create `docker-compose.prod.yml`.
-- [ ] Revisit Supabase transaction-pooler compatibility, configurable pool limits, production docs visibility, readiness timeout, and container `.env` path before deployment.
-- [ ] Add `backend/.dockerignore` if using `backend/` as Docker build context; decide whether public repository personal context and local paths should remain.
+- [x] Trusted client IP (BUG-009): `CLIENT_IP_SOURCE=edge_header` with an authenticated proxy header; Uvicorn `--no-proxy-headers`; forwarding headers stripped; bypass refused (403). Shared auth limiting (BUG-010): edge + PostgreSQL account throttle.
+- [x] Proxy preserves method, path, body, status, every `Set-Cookie`, forces `no-store`, and records the real client IP (verified live through Nginx: audit IP = observed peer, spoofed headers ignored).
+- [x] Production refuses to start without strong secret, secure cookies, HTTPS origins, debug off, explicit client-IP source, and with a leftover bootstrap password; `app.preflight` fails the container fast.
+- [x] BUG-013 reviewed: all packages are at the latest release of their major; fixes require majors. Production Router advisories do not apply (fixed/allowlisted navigation, no SSR); dev-tool advisories accepted with scope (ADR 014). CI gates `npm audit --omit=dev --audit-level=high`.
+- [x] Write multi-stage, non-root `backend/Dockerfile` (uid 10001, preflight, health check).
+- [x] Write multi-stage Nginx `frontend/Dockerfile` (nginx-unprivileged uid 101, SPA + `/api/*` proxy).
+- [x] Configure GitHub Actions workflow `backend-ci.yml`.
+- [x] Configure GitHub Actions workflows `frontend-ci.yml` and `containers.yml` (production stack smoke test).
+- [x] Create `docker-compose.prod.yml` (migrate release job, internal network, read-only hardened containers) and `scripts/build.ps1`, `scripts/smoke-prod.sh`.
+- [x] Transaction-pooler mode, configurable pool limits, docs hidden outside development, 3 s readiness bound, `ENV_FILE` container behavior.
+- [x] Add `backend/.dockerignore` and `frontend/.dockerignore`.
+- [ ] Owner decision: whether the public repository should keep personal context and local paths in `AI_CONTEXT.md` / `.ai/`.
+- [ ] Operational, per deployment: run the DEPLOYMENT_STRATEGY §8 live checks on the real Cloudflare Pages + Railway (or chosen) hosts, and add Cloudflare WAF rate-limit rules.
 - [ ] Decide whether a separate audit-log database role or metadata naming convention is needed when schema/deployment complexity justifies it.
 
 ---

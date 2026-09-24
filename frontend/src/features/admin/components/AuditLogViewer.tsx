@@ -12,6 +12,7 @@ const ACTIONS = [
   'admin.user_update',
   'auth.login',
   'auth.login_failed',
+  'auth.login_throttled',
   'auth.register',
   'auth.refresh',
   'auth.refresh_reuse',

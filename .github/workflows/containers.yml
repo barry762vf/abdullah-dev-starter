@@ -1,0 +1,53 @@
+name: containers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "docker-compose.prod.yml"
+      - "scripts/smoke-prod.sh"
+      - ".github/workflows/containers.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "docker-compose.prod.yml"
+      - "scripts/smoke-prod.sh"
+      - ".github/workflows/containers.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: containers-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  production-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Throwaway production configuration (generated per run, never stored)
+        run: |
+          mkdir -p deploy
+          {
+            echo "PUBLIC_ORIGIN=https://app.example.com"
+            echo "SECRET_KEY=$(openssl rand -hex 32)"
+            echo "EDGE_PROXY_SECRET=$(openssl rand -hex 24)"
+            echo "POSTGRES_USER=app"
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 16)"
+            echo "POSTGRES_DB=abdullah_core"
+          } > deploy/production.env
+      - name: Build and start the production stack
+        run: docker compose --env-file deploy/production.env -f docker-compose.prod.yml up -d --build --wait
+      - name: Smoke test (proxy, cookies, bypass refusal, non-root, read-only)
+        run: bash scripts/smoke-prod.sh deploy/production.env
+      - name: Logs on failure
+        if: failure()
+        run: docker compose --env-file deploy/production.env -f docker-compose.prod.yml logs --no-color | tail -200
+      - name: Stop
+        if: always()
+        run: docker compose --env-file deploy/production.env -f docker-compose.prod.yml down -v

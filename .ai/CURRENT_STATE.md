@@ -11,14 +11,14 @@
 
 | Metric | Status | Details |
 | :--- | :--- | :--- |
-| **Active Roadmap Phase** | **Phase 6 complete; Phase 7 next** | Automated regression suite and coverage reporting are complete. No Phase 7 deployment or Phase 8 integration work started. |
+| **Active Roadmap Phase** | **Phase 7 complete; Phase 8 next** | Production containers, proxy topology, CI and deployment gates complete. No Phase 8 integration work started. |
 | **Backend State** | Auth, RBAC and administration complete | Phase 3 auth plus `/api/v1/admin` users/PATCH/stats/audit-logs under one router guard, superadmin-only role changes, advisory-lock last-superadmin invariant and admin audit rows (ADR 013). |
 | **Frontend State** | Phase 5 implemented | Phase 4 shell plus `/admin` (overview, users, audit log) behind AuthGuard and UX-only RoleGuard; accessible dialogs, bilingual RTL/LTR tables. |
 | **Database State** | Revisions 001 and 002 verified | Docker PostgreSQL healthy; `abdullah_core_test` passed explicit upgrade, downgrade to base, re-upgrade, Alembic drift check, and new regressions. Development schema was not changed. |
 | **Authentication** | Phase 3 implemented | Registration, login, refresh, logout, and self profile routes pass live PostgreSQL tests. Known reuse revokes active sessions; unknown/expired tokens do not. |
-| **Test Suite** | Phase 6 complete | 99 backend pytest (97% coverage; `pytest -m unit` runs 56 without PostgreSQL) and 45 frontend Vitest tests (98% lines, 90% branches); Ruff, pip check, Alembic check, TypeScript, ESLint and Vite build pass. |
+| **Test Suite** | Phase 7 checks passing | 118 backend pytest (96% coverage) and 54 frontend Vitest tests; Ruff, pip check, Alembic check, TypeScript, ESLint, build; production Docker stack built, run and smoke-tested locally. |
 | **Documentation** | Foundation guide complete | Engineering guides are in `docs/`; root `README.md` and `LICENSE` are present. |
-| **Active Blockers** | None for local Phase 4 behavior | Production remains gated on the Pages edge proxy, trusted client IP and stronger shared/edge abuse controls (BUG-009/010). BUG-013 tracks old-major frontend dependency advisories; no production deployment is claimed. |
+| **Active Blockers** | None in the repository | BUG-009/010/013 resolved or formally accepted (ADR 014). Operational: first live Cloudflare/Railway smoke test and WAF rules per deployment. |
 
 ---
 
@@ -54,4 +54,4 @@
 
 ## 3. Immediate Focus (Next Up)
 
-The exact next roadmap task is **Phase 7 production containerization and CI/CD** from `docs/DEVELOPMENT_ROADMAP.md`, including the deployment gates BUG-009, BUG-010, BUG-013 and the Pages `/api/*` proxy.
+The exact next roadmap task is **Phase 8 pluggable integration slots** from `docs/DEVELOPMENT_ROADMAP.md` (abstract interfaces with NullProvider fallbacks). Integrations needing outbound network access must add a deliberate egress network to the production compose file.

@@ -1,6 +1,7 @@
 """Async PostgreSQL engine and request-scoped session dependency."""
 
 from collections.abc import AsyncIterator
+from uuid import uuid4
 
 from fastapi import Request
 from sqlalchemy.ext.asyncio import (
@@ -13,16 +14,29 @@ from sqlalchemy.ext.asyncio import (
 from app.core.config import Settings
 
 
+def connect_args(settings: Settings) -> dict[str, object]:
+    args: dict[str, object] = {"timeout": 5}
+    if settings.database_transaction_pooler:
+        # PgBouncer/Supavisor transaction mode may run each statement on a different server
+        # connection, so asyncpg must not cache or reuse named prepared statements.
+        args |= {
+            "statement_cache_size": 0,
+            "prepared_statement_cache_size": 0,
+            "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4()}__",
+        }
+    return args
+
+
 def create_engine(settings: Settings) -> AsyncEngine:
     return create_async_engine(
         settings.database_url.get_secret_value(),
-        pool_size=10,
-        max_overflow=20,
-        pool_timeout=30,
+        pool_size=settings.db_pool_size,
+        max_overflow=settings.db_max_overflow,
+        pool_timeout=settings.db_pool_timeout,
         pool_recycle=1800,
         pool_pre_ping=True,
         hide_parameters=True,
-        connect_args={"timeout": 5},
+        connect_args=connect_args(settings),
     )
 
 

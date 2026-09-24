@@ -116,14 +116,16 @@ describe('session propagation', () => {
     expect(window.location.pathname).toBe('/admin')
   })
 
-  it('never redirects after login to a destination outside the allowlist', async () => {
+  // BUG-013: React Router 6 has a backslash open-redirect advisory for untrusted Link/navigate
+  // targets; the login allowlist means no untrusted string ever reaches navigate().
+  it.each(['//evil.example/steal', '\\\\evil.example', '/\\evil.example', '\\/evil.example', 'https://evil.example/admin'])('never redirects after login to %s', async (from) => {
     const user = userEvent.setup()
     routes['/users/me'] = () => ({ status: 401 })
     routes['POST /auth/login'] = () => {
       routes['/users/me'] = () => ({ status: 200, data: member })
       return { status: 200, data: member }
     }
-    window.history.pushState({ usr: { from: '//evil.example/steal' }, key: 'x', idx: 0 }, '', '/login')
+    window.history.pushState({ usr: { from }, key: 'x', idx: 0 }, '', '/login')
     render(<App />)
     await user.type(await screen.findByLabelText('Email address'), 'mona@example.com')
     await user.type(screen.getByLabelText('Password'), 'Example-password-123!')

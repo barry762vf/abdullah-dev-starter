@@ -14,6 +14,9 @@ class MemoryStorage implements Storage {
   setItem(key: string, value: string) { this.values.set(key, value) }
 }
 
-Object.defineProperty(window, 'localStorage', { configurable: true, value: new MemoryStorage() })
+// Edge-function tests run in the node environment, which has no window.
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'localStorage', { configurable: true, value: new MemoryStorage() })
+}
 
 afterEach(() => cleanup())

@@ -20,6 +20,7 @@ def app_for(**overrides):
         "secret_key": "test-only-secret",
         "database_url": "postgresql+asyncpg://test:test@localhost:5432/test_db",
         "cors_origins": ALLOWED,
+        "client_ip_source": "peer",
     }
     return create_app(Settings(**(values | overrides)))
 

@@ -35,3 +35,30 @@ async def test_readiness_returns_service_unavailable_without_leaking_error() -> 
     assert "private connection information" not in response.text
     assert liveness.status_code == 200
     assert liveness.json()["database"] == "not_checked"
+
+
+@pytest.mark.asyncio
+async def test_readiness_times_out_quickly_when_the_database_hangs(monkeypatch) -> None:
+    import asyncio
+
+    from app.api.v1 import health
+
+    monkeypatch.setattr(health, "READINESS_TIMEOUT_SECONDS", 0.05)
+    settings = Settings(
+        _env_file=None,
+        secret_key="test-only-secret",
+        database_url="postgresql+asyncpg://test:test@localhost:5432/test_db",
+    )
+    app: FastAPI = create_app(settings)
+
+    class HangingSession:
+        async def execute(self, _query):
+            await asyncio.sleep(5)
+
+    async def hanging_db():
+        yield HangingSession()
+
+    app.dependency_overrides[get_db] = hanging_db
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await asyncio.wait_for(client.get("/api/v1/ready"), timeout=2)
+    assert response.status_code == 503

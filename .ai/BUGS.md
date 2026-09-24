@@ -26,16 +26,39 @@ Whenever a bug, regression, or environment fault is identified, record it immedi
 
 ## 2. Active Bugs
 
-### 🐛 BUG-013: Selected frontend major versions have unresolved npm advisories
+*No active bugs. BUG-009, BUG-010 and BUG-013 were resolved or formally accepted in Phase 7 (see ADR 014).*
+
+## 3. Resolved Bugs
+
+### 🐛 BUG-017: Misconfigured API container stayed "up" while workers crash-looped
 - **Date Discovered:** 2026-09-24
-- **Severity:** High for development tooling; Medium for shipped SPA dependency
-- **Component:** Frontend dependencies
-- **Symptoms:** `npm audit --audit-level=high` reports 7 advisories (5 moderate, 1 high, 1 critical) in the locked Vite 5/Vitest 2 toolchain and React Router 6. Production-only audit reports two moderate React Router advisories.
-- **Root Cause:** ADR 002 and the folder architecture select older major versions; npm's proposed fixes require Vite 8, Vitest 5, and React Router 7, which are major upgrades outside Phase 4's approved stack.
-- **Fix Applied:** Vite dev server binds only `127.0.0.1`; no Vite/Vitest server is shipped in the static production bundle. The only post-login navigation target is the fixed `/dashboard` path, and all app links use fixed internal paths; the SSR hydration advisory does not apply to this SPA. No forced major upgrade was made silently.
-- **Verification:** Full npm audit failed with 7 findings. `npm audit --omit=dev --audit-level=high` exited 0 but still reported two moderate Router findings. Frontend tests, typecheck, lint and static build pass.
-- **Phase 6 note:** Adding `@vitest/coverage-v8@2.1.9` (dev only, matched to Vitest 2.1.9) raises the full audit to 8 entries (2 critical). The new entry is inherited from the existing Vitest advisory, not a new underlying vulnerability; the production audit is unchanged (2 moderate Router findings).
-- **Status:** Active; reassess and upgrade with ADR review before shared development or public deployment. Do not treat the successful build as clearing the advisory.
+- **Severity:** Medium
+- **Component:** Backend container
+- **Symptoms:** With missing production settings, `uvicorn --workers 2` kept its parent process running (container "Up (unhealthy)") while each worker died on the Settings ValidationError.
+- **Root Cause:** Uvicorn's multi-process supervisor does not exit when workers fail at import.
+- **Fix Applied:** The image runs `python -m app.preflight` first; it validates settings and startup guards once and exits 1, printing field names and messages without input values.
+- **Verification:** Container exits 1 with `startup refused: secret_key: Field required`; unit tests prove failure and that a DATABASE_URL password is never printed.
+- **Status:** Resolved
+
+### 🐛 BUG-018: Nginx could start without the proxy configuration
+- **Date Discovered:** 2026-09-24
+- **Severity:** Medium (found before release)
+- **Component:** Web container
+- **Symptoms:** On a read-only filesystem the template step logged "conf.d is not writable" and Nginx started with no server block.
+- **Root Cause:** The nginx entrypoint treats template failures as non-fatal; tmpfs mounts were root-owned.
+- **Fix Applied:** tmpfs mounts owned by uid 101; the image's `10-require-proxy-config.sh` fails closed on a non-writable config directory, missing `API_UPSTREAM`, or an `EDGE_PROXY_SECRET` shorter than 32 characters.
+- **Verification:** Container refuses to start without or with a short secret; stack healthy and smoke-tested with correct configuration.
+- **Status:** Resolved
+
+### 🐛 BUG-019: Tests compared Python time with a frozen transaction clock
+- **Date Discovered:** 2026-09-24
+- **Severity:** Low (test-only flake)
+- **Component:** Backend tests
+- **Symptoms:** `test_expired_refresh_and_unknown_logout` failed once under load.
+- **Root Cause:** Inside the rollback fixture PostgreSQL `now()` is the outer transaction's start; an "expired 1 s ago" Python timestamp could still be later than it on a slow run. The new login-throttle test hit the same effect.
+- **Fix Applied:** One-day expiry margin; time-window tests use committed rows and real transactions.
+- **Verification:** Full backend suite 118 passed.
+- **Status:** Resolved
 
 ### 🐛 BUG-009: Real client IP depends on unverified production proxy trust
 - **Date Discovered:** 2026-09-24
@@ -45,7 +68,8 @@ Whenever a bug, regression, or environment fault is identified, record it immedi
 - **Root Cause:** Uvicorn rewrites ASGI `client.host` before FastAPI based on `--proxy-headers` and `--forwarded-allow-ips`; there is no production launch configuration yet.
 - **Fix Applied:** Local launch instructions use `--no-proxy-headers`. Deployment docs require exact trusted ingress IPs, header overwrite and a live audit-IP smoke test, or edge limiting when those cannot be guaranteed.
 - **Verification:** Independent Uvicorn middleware probe: loopback + `X-Forwarded-For: 6.6.6.6` resolved as `6.6.6.6`; nontrusted `172.18.0.5` remained the peer.
-- **Status:** Active Phase 7 deployment gate; no production ingress was configured in this task.
+- **Phase 7 resolution:** `CLIENT_IP_SOURCE` is required outside development. Both shipped proxies (Nginx image, Cloudflare Pages Function) overwrite `X-Edge-Client-IP` with the observed peer / `CF-Connecting-IP` and authenticate with `EDGE_PROXY_SECRET`; the API refuses requests without it (403, liveness exempt) and strips the credential. Uvicorn always runs `--no-proxy-headers`. Verified live: audit IP = real peer while `X-Forwarded-For`/`X-Edge-Client-IP` spoofing was ignored; direct API access refused.
+- **Status:** Resolved (Phase 7)
 
 ### 🐛 BUG-010: In-process auth limiter can be bypassed by address churn
 - **Date Discovered:** 2026-09-24
@@ -58,8 +82,20 @@ Whenever a bug, regression, or environment fault is identified, record it immedi
 - **Status:** Active production hardening; does not block Phase 4 local auth integration.
 
 ---
+- **Phase 7 resolution:** shared per-IP limits at the proxy/edge (Nginx `limit_req`; Cloudflare WAF rules documented) and a PostgreSQL per-account throttle shared by every worker/instance (10 failures / 15 min since last success → 429 before hashing, tested). The in-process limiter remains local defence in depth. Accepted tradeoff: a known email can be throttled by an attacker; edge per-IP limits bound it.
+- **Status:** Resolved for the starter (Phase 7); add CAPTCHA or a shared store per project if needed
 
-## 3. Resolved Bugs
+### 🐛 BUG-013: Selected frontend major versions have unresolved npm advisories
+- **Date Discovered:** 2026-09-24
+- **Severity:** High for development tooling; Medium for shipped SPA dependency
+- **Component:** Frontend dependencies
+- **Symptoms:** `npm audit --audit-level=high` reports 7 advisories (5 moderate, 1 high, 1 critical) in the locked Vite 5/Vitest 2 toolchain and React Router 6. Production-only audit reports two moderate React Router advisories.
+- **Root Cause:** ADR 002 and the folder architecture select older major versions; npm's proposed fixes require Vite 8, Vitest 5, and React Router 7, which are major upgrades outside Phase 4's approved stack.
+- **Fix Applied:** Vite dev server binds only `127.0.0.1`; no Vite/Vitest server is shipped in the static production bundle. The only post-login navigation target is the fixed `/dashboard` path, and all app links use fixed internal paths; the SSR hydration advisory does not apply to this SPA. No forced major upgrade was made silently.
+- **Verification:** Full npm audit failed with 7 findings. `npm audit --omit=dev --audit-level=high` exited 0 but still reported two moderate Router findings. Frontend tests, typecheck, lint and static build pass.
+- **Phase 6 note:** Adding `@vitest/coverage-v8@2.1.9` (dev only, matched to Vitest 2.1.9) raises the full audit to 8 entries (2 critical). The new entry is inherited from the existing Vitest advisory, not a new underlying vulnerability; the production audit is unchanged (2 moderate Router findings).
+- **Phase 7 disposition:** every affected package is at the latest release of its major (react-router-dom 6.30.6, vite 5.4.21, vitest 2.1.9); all fixes require major upgrades. Production: the Router backslash open redirect needs untrusted `<Link>`/`navigate()` targets — the app uses fixed paths and an exact login allowlist (regression tests include backslash variants); the `deserializeErrors` advisory is SSR-only and this is a client-rendered SPA. Dev tooling (Vite/esbuild/Vitest) affects dev/UI servers only: Vite binds 127.0.0.1, Vitest UI is not installed, production images ship only static files behind Nginx. CI gates `npm audit --omit=dev --audit-level=high`. Reassess at the next major-version ADR.
+- **Status:** Resolved — accepted with documented scope (ADR 014)
 
 ### 🐛 BUG-015: Admin table sr-only labels widened the mobile page
 - **Date Discovered:** 2026-09-24

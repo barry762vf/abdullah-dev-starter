@@ -244,7 +244,9 @@ async def test_expired_refresh_and_unknown_logout(auth_env):
         await db.execute(
             update(RefreshToken)
             .where(RefreshToken.token_hash == refresh_digest(raw))
-            .values(expires_at=datetime.now(UTC) - timedelta(seconds=1))
+            # A wide margin: inside the rollback fixture PostgreSQL now() is frozen at the outer
+            # transaction start, so a 1 s margin can still be "in the future" on a slow run.
+            .values(expires_at=datetime.now(UTC) - timedelta(days=1))
         )
         await db.commit()
     client.cookies.set(REFRESH_COOKIE, raw, path="/api/v1/auth")

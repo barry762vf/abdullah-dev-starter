@@ -359,3 +359,38 @@ async def test_database_engine_hides_password_parameters(test_database_url: str)
                     await transaction.rollback()
     finally:
         await engine.dispose()
+
+
+MIGRATION_LOCK_KEY = 389607175214  # alembic/env.py
+
+
+def test_concurrent_migration_runs_are_serialized(migration_config: Config, test_database_url: str):
+    """env.py holds a session advisory lock, so a second release job waits instead of racing."""
+    import threading
+
+    finished = threading.Event()
+
+    def run_alembic() -> None:
+        command.current(migration_config)
+        finished.set()
+
+    async def scenario() -> None:
+        engine = create_async_engine(test_database_url)
+        try:
+            async with engine.connect() as connection:
+                await connection.execute(
+                    text("SELECT pg_advisory_lock(:key)"), {"key": MIGRATION_LOCK_KEY}
+                )
+                worker = threading.Thread(target=run_alembic, daemon=True)
+                worker.start()
+                await asyncio.sleep(1.5)
+                assert not finished.is_set()  # blocked on the migration lock
+                await connection.execute(
+                    text("SELECT pg_advisory_unlock(:key)"), {"key": MIGRATION_LOCK_KEY}
+                )
+                await asyncio.to_thread(worker.join, 20)
+                assert finished.is_set()
+        finally:
+            await engine.dispose()
+
+    asyncio.run(scenario())

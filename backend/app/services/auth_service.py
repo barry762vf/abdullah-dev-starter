@@ -25,6 +25,11 @@ from app.services.user_service import load_user, profile
 
 _DUMMY_PASSWORD_HASH = hash_password(secrets.token_urlsafe(32))
 
+# Account-aware throttle shared by every worker and instance through PostgreSQL (ADR 014): failed
+# logins since the last success within the window. Complements per-IP limits at the proxy/edge.
+LOGIN_FAILURE_LIMIT = 10
+LOGIN_FAILURE_WINDOW = timedelta(minutes=15)
+
 
 def add_audit(
     db: AsyncSession, action: str, user_id: UUID | None, ip: str | None, agent: str | None
@@ -67,10 +72,34 @@ async def register(db: AsyncSession, data: RegisterRequest, ip: str | None, agen
     return profile(loaded)
 
 
+async def recent_login_failures(db: AsyncSession, user_id: UUID) -> int:
+    last_success = (
+        select(func.max(AuditLog.created_at))
+        .where(AuditLog.user_id == user_id, AuditLog.action == "auth.login")
+        .scalar_subquery()
+    )
+    window_start = func.now() - LOGIN_FAILURE_WINDOW
+    return await db.scalar(
+        select(func.count())
+        .select_from(AuditLog)
+        .where(
+            AuditLog.user_id == user_id,
+            AuditLog.action == "auth.login_failed",
+            AuditLog.created_at
+            > func.greatest(window_start, func.coalesce(last_success, window_start)),
+        )
+    )
+
+
 async def login(
     db: AsyncSession, data: LoginRequest, settings: Settings, ip: str | None, agent: str | None
 ):
     user = await db.scalar(select(User).where(func.lower(User.email) == str(data.email)))
+    if user is not None and await recent_login_failures(db, user.id) >= LOGIN_FAILURE_LIMIT:
+        # Checked before Argon2 so a targeted attack also cannot consume password-hashing CPU.
+        add_audit(db, "auth.login_throttled", user.id, ip, agent)
+        await db.commit()
+        raise AppException(429, "Too Many Requests", "Too many failed sign-in attempts.")
     password_matches = await verify_password_async(
         data.password, user.hashed_password if user else _DUMMY_PASSWORD_HASH
     )

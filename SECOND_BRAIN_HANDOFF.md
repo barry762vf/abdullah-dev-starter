@@ -36,6 +36,10 @@ Lessons from Phase 5: invariants such as "at least one active superadmin" must b
 
 Phase 6 turned the suites into a regression net: 99 backend and 45 frontend tests, with coverage reported but not enforced. Two durable testing lessons: concurrency tests must *prove* the overlap (for example, wait until PostgreSQL shows the second transaction blocked on the lock) or they can silently pass sequentially; and coverage for SQLAlchemy async code needs greenlet tracing, or executed code looks untested and misdirects effort.
 
+Phase 7 (ADR 014) makes the starter deployable with one browser-facing origin: either the bundled Nginx image (SPA plus `/api/*` proxy) in front of an internal-only API and database, or Cloudflare Pages with a Pages Function proxy. The API learns the client IP only from its own proxy, which authenticates with a shared secret; requests that bypass the proxy are refused, so forwarded headers never need to be trusted and hosts with changing ingress IPs still work. Login abuse is limited at the edge per IP and in PostgreSQL per account, with no extra infrastructure. Migrations run once per release under a lock, and production refuses to start with unsafe settings instead of limping along.
+
+Deployment lessons: a multi-worker Uvicorn parent keeps running when workers crash, so validate configuration once before starting it; the nginx template step does not fail on errors, so guard it explicitly; and `now()` inside a long test transaction is frozen, so time-window tests need real transactions.
+
 ## Next direction
 
-Continue with Phase 7 containerization and CI/CD, closing the deployment gates. Build and verify the edge proxy before deployment; resolve the remaining production ingress, rate-limit, and dependency gates. The current task state is in `.ai/AGENT_HANDOFF.md` and `.ai/CURRENT_STATE.md`.
+Continue with Phase 8 integration slots. Before a public launch, run the documented live checks on the real hosts and add Cloudflare WAF limits. Build and verify the edge proxy before deployment; resolve the remaining production ingress, rate-limit, and dependency gates. The current task state is in `.ai/AGENT_HANDOFF.md` and `.ai/CURRENT_STATE.md`.

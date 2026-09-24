@@ -12,6 +12,7 @@ from app.core.config import Settings, get_settings
 from app.core.database import create_engine, create_session_factory
 from app.core.exceptions import handle_unexpected_error, register_exception_handlers
 from app.core.logging import configure_logging, request_id_context
+from app.core.rate_limit import AuthRateLimiter
 
 
 def _add_security_headers(response: Response, request: Request, settings: Settings) -> None:
@@ -52,6 +53,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = engine
     app.state.session_factory = create_session_factory(engine)
     app.state.started_at = monotonic()
+    app.state.auth_rate_limiter = AuthRateLimiter()
     register_exception_handlers(app)
     app.include_router(api_router, prefix="/api/v1")
 

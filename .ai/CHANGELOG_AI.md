@@ -10,6 +10,15 @@ This file tracks every AI agent session, modified files, verification performed,
 
 ## 📋 Session Log
 
+### 🔹 2026-09-24: Phase 3 authentication and RBAC
+- **Agent Role / ID:** Codex (Primary Implementation Engineer)
+- **Primary Goal:** Implement Phase 3 only on the hardened Phase 0–2 foundation.
+- **Implementation:** Added Argon2id passwords; validated registration and self-profile updates; HS256 15-minute access JWTs in HttpOnly cookies with Bearer fallback; 14-day opaque refresh tokens stored only by SHA-256 digest; atomic PostgreSQL rotation and known-reuse revocation; current database active-user/role guards; explicit one-time superadmin bootstrap under a transaction lock; auth audit entries; single-process login/registration IP limits using the resolved peer address.
+- **Files Added:** `app/core/{security,rate_limit}.py`, `app/api/deps.py`, `app/api/v1/{auth,users}.py`, `app/schemas/*`, `app/services/*`, `tests/unit/test_security.py`, and `tests/integration/test_auth.py`.
+- **Files Changed:** Settings, seed command, router, app assembly, pinned dependencies, environment template, configuration tests, relevant auth/security/database/deployment docs, ADR 010, and `.ai/` state.
+- **Verification:** Dedicated Docker PostgreSQL test database only; 40 backend pytest tests passed, including a two-connection refresh race; Ruff check/format, dependency compatibility, and Alembic drift check passed. No normal development schema was changed.
+- **Risk and next task:** BUG-008 records default cross-site hosting incompatibility with `SameSite=Lax`. Phase 4 must select same-site SPA/API domains or a same-origin proxy before browser auth integration. Multi-process rate limiting and trusted reverse-proxy configuration remain Phase 7 deployment tasks.
+
 ### 🔹 2026-09-24: Independent review verification and pre-Phase-3 hardening
 - **Agent Role / ID:** Codex (Primary Implementation Engineer)
 - **Primary Goal:** Independently verify `.ai/REVIEW_CLAUDE.md` and close confirmed Phase 0–2 issues before authentication, without starting Phase 3.

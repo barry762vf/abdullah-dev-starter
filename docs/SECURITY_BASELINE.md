@@ -73,6 +73,6 @@ Interactive documentation has a separate CSP allowing its required assets. `Stri
 ## 5. Secret Management & Anti-Leak Safeguards
 
 - **Never Commit Secrets:** `.env` is explicitly declared in `.gitignore`.
-- **Pre-Flight Startup Guard:** Every non-development environment (`staging` and `production`) requires a 64-character hexadecimal `SECRET_KEY`, `DEBUG=false`, secure cookies, HTTPS CORS origins, and a non-sample initial administrator password. Phase 3 will use that password only for secure initial provisioning.
+- **Pre-Flight Startup Guard:** Every non-development environment (`staging` and `production`) requires a 64-character hexadecimal `SECRET_KEY`, `DEBUG=false`, secure cookies, and HTTPS CORS origins. The initial administrator password is checked only by the explicit bootstrap command and can be removed afterward.
 - **Database Errors:** SQLAlchemy hides bound parameters; centralized handling logs the database error class without PostgreSQL exception details because constraint errors can include token hashes. API responses remain generic.
 - **Sanitized Response Models:** Database entities (`User`) are never returned directly to API clients. Only explicit Pydantic schemas (`UserResponse`) are returned, guaranteeing that `hashed_password` and internal salts are physically excluded from the serialization payload.

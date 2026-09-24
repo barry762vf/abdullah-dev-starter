@@ -56,23 +56,24 @@
 ---
 
 ## 🔐 Phase 3: Authentication & Role-Based Authorization (RBAC)
-- [ ] Add secure initial superadmin provisioning to the Phase 2 seed command using Argon2id and configured credentials; never reset an existing admin password.
-- [ ] Implement `backend/app/core/security.py` (Argon2id password hashing and JWT encoding/decoding).
-- [ ] Create Pydantic v2 auth and user schemas (`backend/app/schemas/auth.py`, `backend/app/schemas/user.py`).
-- [ ] Implement `backend/app/services/auth_service.py` (login, register, token rotation, revocation).
-- [ ] Implement `backend/app/services/user_service.py` (profile retrieval, user updates).
-- [ ] Implement FastAPI authentication dependencies (`backend/app/api/deps.py`: import existing `get_db` from `app.core.database`; add `get_current_user`, `get_current_active_user`, `require_role`).
-- [ ] Load current `is_active` and role membership from PostgreSQL on protected requests; use atomic refresh rotation and known-reuse handling from ADR 009.
-- [ ] Make registration fail clearly if baseline `user` role is absent; ensure seed command runs in auth integration tests and deployment bootstrap.
-- [ ] Revisit the permanent `INITIAL_ADMIN_PASSWORD` startup requirement during secure administrator bootstrap.
-- [ ] Configure trusted proxy handling before relying on client IP for auth rate limits and audit events.
-- [ ] Implement API endpoints (`/api/v1/auth/register`, `/login`, `/refresh`, `/logout`).
-- [ ] Implement `/api/v1/users/me` profile endpoints.
-- [ ] Write pytest integration suite verifying auth, token rotation, and RBAC guards.
+- [x] Add secure initial superadmin provisioning to the Phase 2 seed command using Argon2id and configured credentials; never reset an existing admin password.
+- [x] Implement `backend/app/core/security.py` (Argon2id password hashing and JWT encoding/decoding).
+- [x] Create Pydantic v2 auth and user schemas (`backend/app/schemas/auth.py`, `backend/app/schemas/user.py`).
+- [x] Implement `backend/app/services/auth_service.py` (login, register, token rotation, revocation).
+- [x] Implement `backend/app/services/user_service.py` (profile retrieval, user updates).
+- [x] Implement FastAPI authentication dependencies (`backend/app/api/deps.py`: import existing `get_db` from `app.core.database`; add `get_current_user`, `get_current_active_user`, `require_role`).
+- [x] Load current `is_active` and role membership from PostgreSQL on protected requests; use atomic refresh rotation and known-reuse handling from ADR 009.
+- [x] Make registration fail clearly if baseline `user` role is absent; ensure seed command runs in auth integration tests and deployment bootstrap.
+- [x] Revisit the permanent `INITIAL_ADMIN_PASSWORD` startup requirement during secure administrator bootstrap.
+- [x] Use only the ASGI resolved peer IP for Phase 3 auth limits/audit and document trusted-proxy deployment requirements.
+- [x] Implement API endpoints (`/api/v1/auth/register`, `/login`, `/refresh`, `/logout`).
+- [x] Implement `/api/v1/users/me` profile endpoints.
+- [x] Write pytest integration suite verifying auth, token rotation, and RBAC guards.
 
 ---
 
 ## 🎨 Phase 4: Frontend Shell, Modern UI & Bilingual Engine (RTL / LTR)
+- [ ] Choose same-site SPA/API hostnames or a same-origin proxy before wiring browser cookie auth (BUG-008).
 - [ ] Scaffold `frontend/` with React, Vite, and TypeScript.
 - [ ] Configure Tailwind CSS with RTL logical properties and Cairo + Inter fonts.
 - [ ] Set up `i18next` with Arabic (`locales/ar/translation.json`) and English (`locales/en/translation.json`).
@@ -104,6 +105,7 @@
 ---
 
 ## 🚢 Phase 7: Production Containerization & CI/CD
+- [ ] Configure exact trusted proxy IPs, strip untrusted forwarding headers, and add a shared auth rate limiter before multi-worker or multi-instance deployment.
 - [ ] Write multi-stage, non-root `backend/Dockerfile`.
 - [ ] Write multi-stage Nginx `frontend/Dockerfile`.
 - [ ] Configure GitHub Actions workflow `backend-ci.yml`.

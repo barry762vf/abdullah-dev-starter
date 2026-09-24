@@ -11,14 +11,14 @@
 
 | Metric | Status | Details |
 | :--- | :--- | :--- |
-| **Active Roadmap Phase** | **Pre-Phase-3 hardening complete; Phase 3 next** | Phases 0–2 remain complete; Phase 3 has not started. |
-| **Backend State** | Database foundation hardened | ORM delete cascades, case-insensitive email uniqueness, restricted role deletion, sanitized DB errors, and staging guards added. |
+| **Active Roadmap Phase** | **Phase 3 complete; Phase 4 next** | Phases 0–3 are implemented and verified; no frontend work started. |
+| **Backend State** | Authentication and RBAC foundation complete | Argon2id, JWT access cookies/Bearer fallback, rotating opaque refresh tokens, current database role guards, explicit admin bootstrap, auth audit, and scoped rate limits. |
 | **Frontend State** | Not Started | Directory structure, styling, and bidi strategy specified. |
 | **Database State** | Revisions 001 and 002 verified | Docker PostgreSQL healthy; `abdullah_core_test` passed explicit upgrade, downgrade to base, re-upgrade, Alembic drift check, and new regressions. Development schema was not changed. |
-| **Authentication** | Design clarified; implementation not started | ADR 009 specifies current DB authorization checks, atomic refresh rotation, known-reuse handling, opaque tokens, and `revoked_at`. |
-| **Test Suite** | Hardening tests passing | 30 backend tests pass; Ruff lint/format and pip check pass. Frontend tests belong to later phases. |
+| **Authentication** | Phase 3 implemented | Registration, login, refresh, logout, and self profile routes pass live PostgreSQL tests. Known reuse revokes active sessions; unknown/expired tokens do not. |
+| **Test Suite** | Phase 3 tests passing | 40 backend tests pass, including independent-connection refresh race; Ruff lint/format, dependency check, and Alembic drift check pass. |
 | **Documentation** | Foundation guide complete | Engineering guides are in `docs/`; root `README.md` and `LICENSE` are present. |
-| **Active Blockers** | None before Phase 3 | Confirmed pre-Phase-3 review findings were fixed or decided. Deferred lower-priority items are recorded in TODO. |
+| **Active Blockers** | None for Phase 3 | BUG-008 records a Phase 4/7 cross-site cookie deployment constraint; shared rate limiting and trusted proxy configuration are deployment follow-ups. |
 
 ---
 
@@ -40,9 +40,11 @@
 - ✅ Verified migration round-trip, schema drift, async connectivity, constraints, cascades, readiness, 19 pytest tests, Ruff lint/format, and dependency integrity on a dedicated PostgreSQL test database.
 - ✅ Independently reproduced Claude review findings; added migration `002_pre_auth_hardening`, ORM and logging fixes, staging guards, and explicit Phase 3 security decisions.
 - ✅ Reverified the dedicated test database with explicit Alembic upgrade → downgrade base → re-upgrade → check, 30 pytest tests, Ruff and dependency checks.
+- ✅ Implemented Phase 3 authentication and RBAC with Argon2id, signed access tokens, opaque refresh rotation, explicit first-superadmin bootstrap, audit events, and current database role checks.
+- ✅ Verified 40 backend tests against the dedicated PostgreSQL test database, Ruff lint/format, dependency integrity, and Alembic drift. The normal development schema was not changed.
 
 ---
 
 ## 3. Immediate Focus (Next Up)
 
-The exact next task is **Phase 3 authentication and RBAC** from `docs/DEVELOPMENT_ROADMAP.md`, following ADR 009 and the updated `docs/AUTH_STRATEGY.md`. Start with Argon2id password hashing, secure initial superadmin provisioning, DB-checked active users and roles, then atomic refresh rotation and endpoints. This hardening run stops before Phase 3 implementation.
+The exact next task is **Phase 4 frontend shell and bilingual engine** from `docs/DEVELOPMENT_ROADMAP.md`. Before connecting browser auth, settle same-site SPA/API hostnames or a same-origin proxy for the approved `SameSite=Lax` cookies (BUG-008). Do not assume default Cloudflare Pages and Railway domains can exchange those cookies.

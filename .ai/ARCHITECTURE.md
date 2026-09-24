@@ -13,9 +13,9 @@
        │ (HTTPS / JSON REST API)
        ▼
 [FastAPI Backend (Uvicorn)]
-  ├── app/core/          -> config, database.get_db, logging, exceptions
-  ├── app/api/deps.py    -> Phase 3 get_current_user, require_role
-  ├── app/api/v1/        -> auth.py, users.py, admin.py, health.py
+  ├── app/core/          -> config, database.get_db, logging, exceptions, security
+  ├── app/api/deps.py    -> current DB identity and role guards
+  ├── app/api/v1/        -> auth.py, users.py, health.py (admin.py in Phase 5)
   ├── app/schemas/       -> Pydantic v2 validation contracts
   ├── app/services/      -> Pure business logic
   ├── app/models/        -> SQLAlchemy 2.0 ORM entities

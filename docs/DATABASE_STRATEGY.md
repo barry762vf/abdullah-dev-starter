@@ -140,7 +140,7 @@ On fresh deployment or local spin-up, the system provides an idempotent seeding 
    - Creates the superadmin user securely hashed with Argon2id if no admin currently exists.
    - Never overwrites or resets an existing administrator password upon subsequent restarts.
 
-Phase 2 provides an explicit `python -m app.core.seed` command for the three baseline roles only. It does not create accounts or assign permissions. Phase 3 must implement the documented Argon2id bootstrap using `INITIAL_ADMIN_EMAIL` and `INITIAL_ADMIN_PASSWORD`, with no sample credentials accepted outside local development. Role seeding is idempotent and never changes an existing role's description or grants.
+`python -m app.core.seed` seeds the three baseline roles only. Phase 3 adds the explicit `python -m app.core.seed --bootstrap-admin` option using `INITIAL_ADMIN_EMAIL` and `INITIAL_ADMIN_PASSWORD`. It rejects sample credentials in every environment, creates at most one initial superadmin under a transaction lock, and never changes an existing administrator. The bootstrap password can be removed after provisioning. Role seeding remains idempotent and does not change existing descriptions or grants.
 
 ### Dedicated test database
 

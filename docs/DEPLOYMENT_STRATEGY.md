@@ -67,6 +67,10 @@ flowchart LR
 | `DATABASE_URL` | PostgreSQL async connection string | `postgresql+asyncpg://postgres:postgres@localhost:5432/abdullah_core_dev` | Supabase / Railway URI |
 | `CORS_ORIGINS` | Comma-separated allowed frontend domains | `http://localhost:5173,http://localhost:3000` | `https://yourdomain.pages.dev` |
 | `COOKIE_SECURE` | Force HTTPS for auth cookies | `false` | `true` |
+
+Phase 3 browser sessions use `SameSite=Lax` HttpOnly cookies. The production SPA and API must therefore use the same schemeful site (for example, `app.example.com` and `api.example.com`) or a same-origin reverse proxy. A default `*.pages.dev` frontend calling an unrelated `*.railway.app` API is cross-site, so browser fetches will not send these cookies. Decide the domain/proxy arrangement before Phase 4 browser integration; changing to `SameSite=None` would require a separate security decision and CSRF review.
+
+The Phase 3 authentication rate limiter is per application process. For a reverse-proxy deployment, configure Uvicorn `--forwarded-allow-ips` with only the proxy's actual IP addresses and strip untrusted forwarded headers at that proxy. Configure a shared rate limiter before scaling to multiple workers or instances.
 | `INITIAL_ADMIN_EMAIL`| Auto-seeded superadmin account | `admin@devcore.local` | Client owner email |
 | `INITIAL_ADMIN_PASSWORD`| Initial superadmin temporary password | `Admin123!Secure` | Strong temporary secret |
 

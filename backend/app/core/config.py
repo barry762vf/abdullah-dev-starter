@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
     cookie_secure: bool = False
 
-    # These values are defined in the master template and used by later phases.
+    # Read only by the explicit administrator bootstrap command.
     initial_admin_email: str = ""
     initial_admin_password: SecretStr = SecretStr("")
     ai_provider: str = "disabled"
@@ -86,11 +86,6 @@ class Settings(BaseSettings):
             raise ValueError("COOKIE_SECURE must be true in staging/production")
         if any(not origin.startswith("https://") for origin in self.allowed_origins):
             raise ValueError("Staging/production CORS_ORIGINS must use HTTPS")
-        admin_password = self.initial_admin_password.get_secret_value()
-        if len(admin_password) < 12 or admin_password == "Admin123!Secure":
-            raise ValueError(
-                "Set a strong, non-sample INITIAL_ADMIN_PASSWORD in staging/production"
-            )
         return self
 
     @property

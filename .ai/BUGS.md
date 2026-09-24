@@ -26,7 +26,15 @@ Whenever a bug, regression, or environment fault is identified, record it immedi
 
 ## 2. Active Bugs
 
-*No active confirmed pre-Phase-3 blocker after the hardening pass. Lower-priority review items are tracked in `.ai/TODO.md`.*
+### 🐛 BUG-008: Default split hosting domains do not carry Lax auth cookies
+- **Date Discovered:** 2026-09-24
+- **Severity:** Medium
+- **Component:** Browser deployment integration
+- **Symptoms:** A browser SPA on a default Cloudflare Pages domain cannot use the Phase 3 HttpOnly `SameSite=Lax` cookies when calling an unrelated Railway domain.
+- **Root Cause:** Such hosts are cross-site; browsers omit Lax cookies on cross-site API fetches.
+- **Fix Applied:** Deployment guidance now requires same-site custom domains or a same-origin reverse proxy. Phase 3 retains the approved Lax policy.
+- **Verification:** Phase 3 tests cover same-site API behavior; cross-site browser deployment belongs to Phase 4/7.
+- **Status:** Active deployment constraint; resolve domain/proxy topology before browser integration.
 
 ---
 

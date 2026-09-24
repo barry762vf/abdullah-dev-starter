@@ -1,45 +1,39 @@
-# AI Agent Handoff — pre-Phase-3 hardening complete
+# AI Agent Handoff — Phase 3 complete
 
 > From: Codex (Primary Implementation Engineer)
 > Date: 2026-09-24
-> Status: Phases 0–2 complete and hardened; Phase 3 has not started.
+> Status: Phases 0–3 complete; Phase 4 next.
 
-## Review verification and resolution
+## Foundation and Git
 
-The independent report arrived as untracked root `REVIEW_CLAUDE.md`, while the request named `.ai/REVIEW_CLAUDE.md`. It was moved intact into `.ai/`; Codex's evidence and classifications were appended in §9. Code and live rollback-only probes on `abdullah_core_test` were used to verify the pre-Phase-3 findings.
+Phases 0–2 and pre-Phase-3 hardening were verified before this work. Docker Engine 29.8.0 and PostgreSQL 16 were operational. All destructive migration tests and Phase 3 integration data used only the guarded `abdullah_core_test` database; the normal development schema was not changed. Local `main` started clean at `b91412d`, tracking `origin/main` at `https://github.com/barry762vf/abdullah-dev-starter.git`. Phase 3 is a separate commit; see Git log for its final hash and remote state.
 
-| Review finding | Codex status | Resolution |
-| :--- | :--- | :--- |
-| Loaded ORM user deletion | **CONFIRMED** | Reproduced role `AssertionError` and token `IntegrityError`; added User delete-orphan cascades and `session.delete()`/commit test with relationships loaded. |
-| Case-sensitive email uniqueness | **CONFIRMED** | Reproduced case-variant inserts; Alembic `002_pre_auth_hardening` adds unique `lower(email)` index and test. Request normalization remains Phase 3. |
-| SQL parameter/hash logging | **CONFIRMED**, proposed fix only partial | Default SQLAlchemy exception exposed synthetic password hash. `hide_parameters=True` hides it, but PostgreSQL `DETAIL` still exposes conflicting token hash. Database exceptions now log class only; tests cover both layers. |
-| `downgrade -1` round-trip | **CONFIRMED** | With two revisions, one-step downgrade leaves initial tables. Test now covers `base → head → base → head` plus `alembic check`. |
-| Authentication design questions | **DESIGN TRADEOFF**, resolved in ADR 009 | Phase 3 must load current `is_active` and roles from DB on protected requests; rotate refresh digests atomically; distinguish known revoked-token reuse from unknown/tampered or expired input; use `secrets.token_urlsafe(32)`; record `revoked_at`. No grace window in baseline. No auth code was added. |
+## Phase 3 implementation
 
-Optional items: D1 role deletion **CONFIRMED/adopted** with `ON DELETE RESTRICT` and a loaded-assignment test. D2 async relationship loading **CONFIRMED/adopted** with `lazy="raise"` and a test. D3 naming convention **DESIGN TRADEOFF/deferred** because committed revision 001 already has PostgreSQL-generated constraint names and changing them adds migration churn without a current defect. B1 staging guard **CONFIRMED/adopted** with one test per security check. Lower-priority review items remain in `.ai/TODO.md` for their phases.
+- Registration normalizes email, validates a 12–128-character password, assigns only the seeded `user` role, and maps duplicate-email races to `409`. Missing baseline role returns `503`. Profiles exclude password hashes.
+- Login verifies Argon2id and issues a 15-minute HS256 JWT with only `sub`, `type`, `iat`, and `exp`. Access is carried by HttpOnly cookie or Bearer header. Each protected request loads the account and current roles from PostgreSQL, so disabling an account or removing a role takes effect immediately.
+- Refresh uses a 14-day opaque token from `secrets.token_urlsafe(32)` and stores only its SHA-256 digest. A conditional PostgreSQL `UPDATE ... RETURNING` atomically consumes it; successor and audit event commit before cookies are returned. Unknown and expired input return `401` without mass revocation. Known revoked-token reuse revokes remaining sessions for that user. Concurrent use can force re-login; there is no grace window.
+- Logout revokes only the presented refresh session and clears both cookies. Cookie mutations require `X-Requested-With: XMLHttpRequest`. SameSite=Lax and explicit CORS origins are retained.
+- `get_current_user`, `get_current_active_user`, and `require_role` use explicitly loaded relationships. Current `superadmin` membership satisfies any role guard. No Phase 5 admin-management route was added.
+- `python -m app.core.seed` remains roles-only. `python -m app.core.seed --bootstrap-admin` explicitly creates the first superadmin with Argon2id under a transaction advisory lock. It rejects blank/sample credentials, does not reset an existing administrator, and allows removal of `INITIAL_ADMIN_PASSWORD` afterward. The environment template has no administrator default.
+- Audit records registration, successful/failed login, refresh, known reuse, logout, and bootstrap without credentials or token digests. Login is limited to 5/minute/IP and registration to 3/hour/IP using the ASGI resolved peer IP in a bounded per-process store. Arbitrary forwarded headers are ignored.
 
-## Changes and migration
+## Files and decisions
 
-- New revision `backend/alembic/versions/002_pre_auth_hardening.py` adds the case-insensitive email invariant, nullable `refresh_tokens.revoked_at`, and restricted role deletion. It refuses to apply when existing case-variant duplicate emails require resolution. Revision 001 was not edited.
-- Updated `backend/app/models/{user,token,audit}.py`, `backend/app/core/{database,config,exceptions,logging}.py`, and Alembic's engine configuration. `get_db` remains in `app.core.database`.
-- Expanded integration tests for ORM deletion, role restriction, email collisions, `revoked_at`, async relationship access, hidden parameters, and migration lifecycle. Added API test for sanitized database logs and staging guard tests.
-- Updated ADR 004/009 and the relevant auth, database, security, testing, deployment, roadmap, and AI architecture documentation. Seeded roles remain `superadmin`, `admin`, and `user`; `guest` is not persisted and `manager` is an optional extension.
+Added `backend/app/core/{security,rate_limit}.py`, `backend/app/api/deps.py`, `backend/app/api/v1/{auth,users}.py`, `backend/app/schemas/*`, `backend/app/services/*`, and auth unit/integration tests. Changed seed/config/app/router/dependencies, `.env.example`, README, auth/security/database/deployment docs, and `.ai/` state. ADR 010 records explicit bootstrap, role guard behavior, and scoped rate-limit/proxy behavior. ADR 009 was preserved. No database migration was needed.
 
-## Verification and environment
+## Verification
 
-Docker Desktop engine 29.8.0 and the existing PostgreSQL 16 container were healthy. All destructive migration tests used only `abdullah_core_test`; the normal development schema was not changed. The test URL guard requires the `_test` suffix and differs from the development URL. `.env`, database volume data, and the virtual environment remain ignored.
-
-| Exact check | Result |
-| :--- | :--- |
-| `.venv/Scripts/python.exe -m pytest -q` from `backend/` | 30 passed |
-| `.venv/Scripts/ruff.exe check .` | All checks passed |
-| `.venv/Scripts/ruff.exe format --check .` | All backend files formatted |
-| `.venv/Scripts/python.exe -m pip check` | No broken requirements |
-| Guarded CLI `alembic upgrade head` → `downgrade base` → `upgrade head` | Passed on `abdullah_core_test` |
-| Guarded CLI `alembic check` and `alembic current` | No new upgrade operations; `002_pre_auth_hardening (head)` |
-
-The hardening change is a separate commit after `ddbc9d4`, pushed normally to `origin/main`. No force-push was used. Verify the current commit with `git log -1` when continuing.
+- `.venv\Scripts\python.exe -m pytest -q --tb=short` from `backend/`: **40 passed**.
+- Auth integration coverage: registration/login/profile/logout, missing role, disabled account, current roles, superadmin override, JWT tampering/expiry, rotation/reuse/unknown/expired tokens, bootstrap repeat safety, rate limits, and secret-free logs.
+- Independent PostgreSQL connections: concurrent refresh attempts produced exactly one success and one `401`; known reuse revoked the successor.
+- `.venv\Scripts\ruff.exe check .`: passed.
+- `.venv\Scripts\ruff.exe format --check .`: passed.
+- `.venv\Scripts\python.exe -m pip check`: no broken requirements. `uv pip check` also passed before pip was added to the ignored virtual environment.
+- Guarded Alembic check on `TEST_DATABASE_URL`: no new upgrade operations.
 
 ## Remaining issues and exact next task
 
-No confirmed critical/high or explicit pre-Phase-3 blocker remains. Phase 3 is ready to begin, but **was not started in this run**. The next engineer should implement Phase 3 authentication and RBAC using ADR 009 and `docs/AUTH_STRATEGY.md`: Argon2id and secure initial superadmin provisioning, DB-checked active users/current roles, atomic refresh rotation and known-reuse behavior, auth endpoints, and tests. Also handle Phase 3 TODOs for baseline role presence, permanent bootstrap-secret configuration, and trusted proxy IP before rate limiting. Do not treat JWT role claims as authoritative or mass-revoke on unknown/tampered token input.
+BUG-008 is a browser deployment constraint: SameSite=Lax cookies require same-site SPA/API hosts (custom domains or a same-origin proxy). Default Cloudflare Pages and Railway domains are cross-site. The Phase 3 limiter does not enforce limits across workers/instances; production must configure exact trusted proxy IPs and strip untrusted forwarding headers. These are tracked in Phase 4/7 TODOs.
+
+**Exact next task:** Implement Phase 4 frontend shell and bilingual RTL/LTR engine only, first choosing a same-site SPA/API domain or proxy for browser cookie integration. Do not start Phase 5 administration or alter ADR 009 refresh behavior.

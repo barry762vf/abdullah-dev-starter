@@ -176,7 +176,7 @@ Independent review, 2026-09-24: 0 CRITICAL, 2 HIGH, 4 MEDIUM, 11 LOW. Codex's in
 - [x] Align package metadata to 1.0.0; document Git tag as canonical release version.
 - [x] Refresh README and engineering guides, add customization guide and release notes.
 - [x] Run backend/frontend suites, lint/format/type/build, dependency audits and guarded Alembic drift check.
-- [ ] Confirm release-preparation commit and all triggered GitHub workflows are green for its SHA.
+- [x] Confirm release-preparation commit `14598e9` and backend/frontend/containers GitHub workflows green for its SHA.
 - [ ] Create and publish annotated `v1.0.0` only after the release checks pass.
 - [ ] Optional owner action: enable GitHub **Settings → General → Template repository**.
 - [ ] Project-specific deployment: verify live host cookies, proxy bypass, audit IP, TLS/WAF and any enabled providers.

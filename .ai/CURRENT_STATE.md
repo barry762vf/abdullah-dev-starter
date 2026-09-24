@@ -15,7 +15,7 @@
 - Backend: 91 unit tests, 136 total against dedicated PostgreSQL, 95% coverage; Ruff lint/format and pip check passed. Alembic drift passed against the guarded test database. The standalone check against the unmigrated development database reported “Target database is not up to date”; development data was not modified.
 - Frontend: 54 Vitest tests, 97.91% statements/lines and 90.51% branches; TypeScript, ESLint and production build passed.
 - Dependency audit: full npm audit reports 8 accepted findings (5 moderate, 1 high, 2 critical) under BUG-013/ADR 014; production audit reports 2 moderate, exits 0 at the high gate. Python dependency integrity passed; no Python vulnerability scanner is configured.
-- Docker CLI is unavailable in this task environment. The prior GitHub production-container workflow for Phase 8 commit `10de09c` passed the production stack smoke test; new commit CI must be checked before tagging.
+- Docker CLI is unavailable in this task environment. GitHub workflows for release commit `14598e9` passed: [backend-ci](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35978155712) ran 136 tests at 95% coverage, [frontend-ci](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35978155774) passed, and [containers](https://github.com/barry762vf/abdullah-dev-starter/actions/runs/35978155862) built healthy services and passed `scripts/smoke-prod.sh`.
 - Read-only release security review found no confirmed high/critical application defect. No paid-provider calls were made.
 
 ## Release preparation
@@ -24,7 +24,7 @@ The README, architecture/security/auth/database guides, customization guide and 
 
 ## Remaining work
 
-1. Confirm the release-preparation commit and its GitHub workflows, then create/publish `v1.0.0` only if green.
+1. Release-preparation code commit `14598e9` and all triggered workflows are green. Review release notes, then create/publish annotated `v1.0.0` when the owner chooses to release.
 2. For each real deployment, complete the Cloudflare/Railway or chosen-host smoke, TLS, proxy-IP and edge rate-limit checks in `docs/DEPLOYMENT_STRATEGY.md`.
 3. Enable optional providers only with project credentials, quotas, data policy and live tests; install a durable Telegram handler first.
 4. Reassess BUG-013 and older direct pins as a planned dependency update, without an untested major upgrade in this release.

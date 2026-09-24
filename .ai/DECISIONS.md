@@ -99,3 +99,13 @@ This file contains permanent records of all major technical and architectural de
   - Prevents context loss between agent handoffs.
   - Enforces atomic state tracking (`CURRENT_STATE.md`, `TODO.md`, `CHANGELOG_AI.md`).
   - Separates transient code details from durable architectural knowledge in Obsidian.
+
+---
+
+## ADR 008: Keep Phase 2 role seeding separate from administrator provisioning
+
+- **Date:** 2026-09-24
+- **Status:** Accepted
+- **Context:** The database strategy describes both baseline roles and an initial superadmin. The roadmap places Argon2id password hashing and authentication behavior in Phase 3. Creating a superadmin in Phase 2 without that mechanism would risk an insecure account.
+- **Decision:** Phase 2 provides an explicit, idempotent role seed command only. It never creates a user or changes existing role grants. Phase 3 must implement initial superadmin provisioning with Argon2id and the configured `INITIAL_ADMIN_EMAIL`/`INITIAL_ADMIN_PASSWORD` after migration.
+- **Consequences:** Fresh Phase 2 installations contain role definitions but no admin login. Database integration tests use a separately named `_test` PostgreSQL database and refuse the normal development URL; migration round-trips may recreate schema only there.

@@ -33,7 +33,7 @@ async def test_health_reports_liveness_without_claiming_database_connection(
 
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"
-    assert response.json()["database"] == "not_configured"
+    assert response.json()["database"] == "not_checked"
     assert response.json()["environment"] == "development"
     assert response.json()["uptime_seconds"] >= 0
     UUID(response.headers["X-Request-ID"])

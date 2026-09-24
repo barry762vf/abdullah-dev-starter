@@ -2,16 +2,16 @@
 
 ## Milestones
 
-Phase 0 established the repository and local PostgreSQL development environment, and was verified against a healthy Docker container. Phase 1 now provides a running FastAPI foundation with configuration checks, correlated JSON request logs, consistent error responses, and a health endpoint.
+Phase 0 established the repository and local PostgreSQL development environment. Phase 1 provides the FastAPI foundation. Phase 2 now adds an async PostgreSQL data layer, core identity/role/token/audit schema, and reversible migrations.
 
 ## Durable decisions and lessons
 
-No new architecture decision was needed. The implementation follows the existing FastAPI, React, and PostgreSQL plan. The local database port is restricted to the host loopback interface. Development credentials in the template must be replaced before real use. Phase 1 health reports that application database checking is not configured until the planned Phase 2 database layer.
+ADR 008 keeps baseline role seeding explicit and idempotent while reserving administrator account creation for Phase 3, when Argon2id hashing is available. Integration tests use a dedicated PostgreSQL database and guard against running schema changes on the development database. Application liveness and database readiness are separate endpoints.
 
 ## Verification milestone
 
-Docker Compose started PostgreSQL 16, the container became healthy, and a SQL query connected successfully. Docker Desktop's per-user installation was not on the initial shell PATH; the Windows startup script now finds it. The Phase 1 FastAPI endpoint and interactive documentation both responded successfully on a live Uvicorn server.
+Docker Compose started PostgreSQL 16, and Phase 2's isolated test database passed migration upgrade, downgrade and re-upgrade, schema drift, connectivity, constraint, cascade, and seed idempotency checks. The full backend suite passed 19 tests.
 
 ## Next direction
 
-Implement Phase 2 database sessions, models, and migrations. The current task state is in `.ai/AGENT_HANDOFF.md` and `.ai/CURRENT_STATE.md`.
+Implement Phase 3 authentication and RBAC with secure administrator provisioning. The current task state is in `.ai/AGENT_HANDOFF.md` and `.ai/CURRENT_STATE.md`.

@@ -1,5 +1,6 @@
-"""FastAPI application assembly for the backend foundation phase."""
+"""FastAPI application assembly."""
 
+from contextlib import asynccontextmanager
 from time import monotonic
 from uuid import uuid4
 
@@ -8,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import Settings, get_settings
+from app.core.database import create_engine, create_session_factory
 from app.core.exceptions import handle_unexpected_error, register_exception_handlers
 from app.core.logging import configure_logging, request_id_context
 
@@ -35,8 +37,20 @@ def _add_security_headers(response: Response, request: Request, settings: Settin
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     logger = configure_logging(settings.debug)
-    app = FastAPI(title="Abdullah Developer Core", debug=settings.debug)
+    engine = create_engine(settings)
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        try:
+            yield
+        finally:
+            await engine.dispose()
+
+    app = FastAPI(title="Abdullah Developer Core", debug=settings.debug, lifespan=lifespan)
     app.state.settings = settings
+    app.state.logger = logger
+    app.state.engine = engine
+    app.state.session_factory = create_session_factory(engine)
     app.state.started_at = monotonic()
     register_exception_handlers(app)
     app.include_router(api_router, prefix="/api/v1")

@@ -1,54 +1,35 @@
-# AI Agent Handoff — Phase 1 complete
+# AI Agent Handoff — Phase 2 complete
 
 > From: Codex (Primary Implementation Engineer)
 > Date: 2026-09-24
-> Status: Phase 0 and Phase 1 complete; Phase 2 is next and has not started.
+> Status: Phase 0–2 complete; Phase 3 is next and has not started.
 
-## 1. Phase 0 verification result
+## 1. Prior phases and Git state
 
-Phase 0 passed on a real Docker-enabled host. Docker 29.8.0, Compose 5.5.1, and Linux engine 29.8.0 were operational. A local `.env` was copied from `.env.example` and remains Git-ignored. The default credentials were used only for a loopback-bound development database.
+Phase 0 was verified on Docker PostgreSQL 16.15 and preserved in commit `6b49d5c`. Phase 1 was preserved in separate commit `1e9191f`. `main` tracks `origin/main` at `https://github.com/barry762vf/abdullah-dev-starter.git`. Phase 2 is preserved in the separate commit containing this handoff and pushed normally to `origin/main`. No force-push was used. Neither `.env` nor the virtual environment or database volume is tracked.
+
+## 2. Phase 2 implementation
+
+- Added `backend/app/core/database.py`: async SQLAlchemy engine, documented connection-pool settings, session factory, and request-scoped `get_db` dependency. The application disposes its engine at shutdown.
+- Added `backend/app/models/base.py`, `user.py`, `token.py`, `audit.py`, and model exports. The five entities are User, Role, UserRole, RefreshToken and AuditLog. PostgreSQL generates UUID primary keys; timestamps are timezone-aware. UserRole uses a composite primary key. Unique email, role name and token-hash indexes, foreign keys, a token-hash length check, and audit lookup indexes are present. User deletion cascades role assignments and refresh tokens while preserving audit events with a null actor.
+- Added Alembic async environment, revision template and reversible `001_initial_schema.py`. Alembic migration history is the source of truth for schema changes.
+- Added explicit `python -m app.core.seed` role seeding. Repeated runs do not duplicate roles or change existing grants. No superadmin user is created in Phase 2 because password hashing and login belong to Phase 3; ADR 008 records this decision. The existing `INITIAL_ADMIN_*` settings are reserved for secure Phase 3 bootstrap.
+- Kept `/api/v1/health` a cheap liveness endpoint and added `/api/v1/ready` to ping PostgreSQL. Readiness returns 503 without leaking connection details on failure.
+- Added `TEST_DATABASE_URL` to `.env.example` and documented the dedicated `_test` database procedure. The integration fixture rejects unsafe database names and the normal development URL. Local `.env` is ignored; no credentials were committed.
+
+## 3. Verification on the live Docker database
+
+Docker Desktop engine 29.8.0 ran PostgreSQL in a healthy container on `127.0.0.1:5432`. The separate `abdullah_core_test` database was created for tests; the developer database schema was not modified. The integration suite executed Alembic upgrade, downgrade `-1`, re-upgrade, and `alembic check` on the test database. It verified async connectivity, UUID/timestamp defaults, JSONB defaults, uniqueness and hash-length constraints, user-role/token cascading, audit preservation, role seed idempotency, and successful readiness. The API suite verified 503 readiness sanitization and independent liveness.
 
 | Exact check | Result |
 | :--- | :--- |
-| `docker compose config --quiet` | Passed |
-| `docker compose up -d --wait db` | Passed; healthy PostgreSQL container |
-| `docker compose ps db` | `Up (healthy)`, `127.0.0.1:5432->5432/tcp` |
-| `docker compose exec -T db pg_isready -U postgres -d abdullah_core_dev` | Accepting connections |
-| SQL `SELECT current_database(), current_setting('server_version')` | `abdullah_core_dev|16.15` |
-| `scripts/dev.ps1` | Passed against Docker Desktop's per-user installation |
-
-BUG-001 is resolved. The Windows startup script finds the per-user Docker CLI and credential helper when the current shell PATH lacks them.
-
-## 2. Git and GitHub state
-
-`origin` is `https://github.com/barry762vf/abdullah-dev-starter.git`. Local `main` tracks `origin/main`. The remote's existing `Initial commit` (`2fdda38`) was preserved. Phase 0 was committed separately as `6b49d5c` and pushed normally. Phase 1 is a separate commit on the same branch. Neither `.env` nor Docker volume data is tracked. No force-push was used.
-
-## 3. Phase 1 work completed
-
-- Added `backend/pyproject.toml`, pinned runtime and development requirement files, and the Python 3.11 FastAPI package structure.
-- Added `backend/app/core/config.py` with root `.env` loading, CORS and database URL validation, and production guards for signing key, debug, cookie security, origins, and initial admin password.
-- Added `backend/app/core/logging.py` for JSON logs and request ID context, plus `backend/app/core/exceptions.py` for RFC 7807 problem responses that keep unexpected details out of clients.
-- Added `backend/app/main.py`, API router, and `/api/v1/health`, with CORS, security headers, uptime, generated request IDs, and explicit `database: not_configured` status.
-- Added `backend/tests/unit/test_config.py` and `backend/tests/api/test_health.py`. Updated the README, deployment guide, `.ai/` state, and durable `SECOND_BRAIN_HANDOFF.md`.
-
-## 4. Checks executed and exact results
-
-| Check | Result |
-| :--- | :--- |
-| Python runtime | 3.11.9 virtual environment |
-| `.venv/Scripts/python.exe -m pytest -q` | 14 passed |
+| `.venv/Scripts/python.exe -m pytest -q` from `backend/` | 19 passed |
 | `.venv/Scripts/ruff.exe check .` | All checks passed |
-| `.venv/Scripts/ruff.exe format --check .` | 13 files already formatted |
+| `.venv/Scripts/ruff.exe format --check .` | 25 files already formatted |
 | `.venv/Scripts/python.exe -m pip check` | No broken requirements |
-| Live `python -m uvicorn app.main:app` | Started successfully on `127.0.0.1:8000` |
-| Live `GET /api/v1/health` | HTTP 200; `status=healthy`, `database=not_configured` |
-| Live `GET /docs` | HTTP 200 |
-| Live request log parse | JSON with request ID, path, and status code |
+| Alembic upgrade → downgrade `-1` → re-upgrade | Passed on `abdullah_core_test` |
+| Alembic autogenerate drift check | No new upgrade operations detected |
 
-## 5. Risks and decisions
+## 4. Remaining issues and exact next task
 
-No active bug remains. Phase 1 health is an application liveness check; it does not query PostgreSQL because the async database layer belongs to Phase 2. Existing ADR 001–007 remain unchanged; no new architecture decision was necessary. The Docker Desktop CLI may still be absent from a fresh shell PATH, but `scripts/dev.ps1` has a per-user installation fallback. No type checker was configured in this phase; Ruff and pytest were the configured quality checks.
-
-## 6. Exact recommended next task
-
-Read `AI_CONTEXT.md`, `.ai/` state, `docs/DEVELOPMENT_ROADMAP.md` Phase 2, `docs/DATABASE_STRATEGY.md`, and the actual Phase 1 code. Implement only Phase 2: async SQLAlchemy engine/session dependency, UUID/timestamp model base, User/Role/UserRole, RefreshToken and AuditLog models, Alembic async migration with reversible initial schema, and the planned role/superadmin seeding approach. Run migration upgrade/downgrade and connectivity tests against a dedicated test database, then update `.ai/` and commit Phase 2 separately. Authentication, frontend, and optional adapters remain later phases.
+No active Phase 2 bug is known. Do not create a superadmin from sample credentials or store raw refresh tokens. Phase 3 must implement Argon2id password hashing, secure initial superadmin provisioning from environment without resetting an existing password, JWT access/refresh lifecycle, role guards, authentication endpoints, and comprehensive tests according to `docs/DEVELOPMENT_ROADMAP.md` and `docs/AUTH_STRATEGY.md`. Do not begin frontend or later phases during that task.

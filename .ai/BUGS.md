@@ -26,7 +26,7 @@ Whenever a bug, regression, or environment fault is identified, record it immedi
 
 ## 2. Active Bugs
 
-*No active bugs after Phase 1 verification (14 pytest tests, lint, format, and live startup passed on 2026-09-24).*
+*No active bugs after Phase 2 verification (19 pytest tests, migration round-trip, lint, format, and dependency checks passed on 2026-09-24).*
 
 ---
 

@@ -30,9 +30,9 @@ flowchart TD
 - **`pytest-cov`**: Test coverage reporting.
 
 ### Test Isolation Strategy (`tests/conftest.py`):
-1. **Isolated Test Database:** Tests run against a dedicated PostgreSQL database container (`test_db`) or an asynchronous SQLite in-memory instance (`sqlite+aiosqlite:///:memory:`).
-2. **Transaction Rollback per Test:** Each test executes within an isolated database transaction that rolls back automatically upon completion, ensuring pristine database state for subsequent tests.
-3. **Pre-Built Fixtures:**
+1. **Isolated Test Database:** Phase 2 uses a dedicated PostgreSQL database selected by `TEST_DATABASE_URL`, with a required `_test` database-name suffix. PostgreSQL is required because the schema uses JSONB and PostgreSQL UUID defaults. The fixture rejects the normal development URL.
+2. **Transaction Rollback per Test:** Data tests use an outer transaction that rolls back automatically upon completion. The migration round-trip changes only the dedicated test schema.
+3. **Planned Phase 3 Fixtures:**
    - `client`: Unauthenticated `AsyncClient`.
    - `db_session`: Clean async database session.
    - `test_user`: Seeded standard user (`user` role).
@@ -48,7 +48,7 @@ flowchart TD
 | **Security & Crypto** | `tests/unit/test_security.py` | - Argon2id hashing and verification work reliably.<br>- Password hash changes upon password update.<br>- JWT creation embeds expiration and subject.<br>- Expired or tampered JWT fails decoding. |
 | **Authentication Flow** | `tests/api/test_auth.py` | - Successful registration creates user and sends clean JSON (no password).<br>- Login with correct credentials returns 200 and sets cookies.<br>- Login with invalid password returns 401.<br>- Refresh endpoint rotates token and invalidates old token.<br>- Tampered refresh token revokes all user sessions. |
 | **RBAC Authorization** | `tests/api/test_admin.py` | - Standard user hitting `/api/v1/admin/users` gets `403 Forbidden`.<br>- Unauthenticated user hitting protected routes gets `401 Unauthorized`.<br>- Admin hitting `/api/v1/admin/users` receives paginated user list. |
-| **Database Migrations** | `tests/integration/test_migrations.py` | - Alembic `upgrade head` executes cleanly.<br>- Alembic `downgrade -1` executes reversibly without data corruption. |
+| **Database Migrations** | `tests/integration/test_database.py` | - Alembic upgrade, downgrade and re-upgrade execute on the dedicated test DB.<br>- Metadata drift check, async ping, defaults, constraints, cascades, and seed idempotency pass. |
 
 ---
 
@@ -75,7 +75,7 @@ flowchart TD
 
 ```powershell
 # Run Backend Tests (from /backend directory)
-pytest -v --cov=app --cov-report=term-missing
+.venv/Scripts/python.exe -m pytest -q
 
 # Run Specific Auth Test Suite
 pytest tests/api/test_auth.py -v

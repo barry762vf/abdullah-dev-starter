@@ -34,18 +34,20 @@
 ---
 
 ## 🗄️ Phase 2: Database Layer & Declarative Models
-- [ ] Implement `backend/app/core/database.py` with async SQLAlchemy 2.0 engine and sessionmaker.
-- [ ] Implement `backend/app/models/base.py` with UUID PK and timestamp mixins.
-- [ ] Implement `backend/app/models/user.py` (`User`, `Role`, `UserRole`).
-- [ ] Implement `backend/app/models/token.py` (`RefreshToken`).
-- [ ] Implement `backend/app/models/audit.py` (`AuditLog`).
-- [ ] Initialize Alembic with async migration support in `backend/alembic/`.
-- [ ] Generate initial migration revision (`001_initial_schema.py`).
-- [ ] Implement initial superadmin and roles seeder (`backend/app/core/seed.py`).
+- [x] Implement `backend/app/core/database.py` with async SQLAlchemy 2.0 engine, sessionmaker, and request-scoped dependency.
+- [x] Implement `backend/app/models/base.py` with database-generated UUID PK and timezone-aware timestamp mixins.
+- [x] Implement `backend/app/models/user.py` (`User`, `Role`, `UserRole`).
+- [x] Implement `backend/app/models/token.py` (`RefreshToken` hash storage).
+- [x] Implement `backend/app/models/audit.py` (`AuditLog`).
+- [x] Initialize Alembic with async migration support in `backend/alembic/`.
+- [x] Create reversible initial migration revision (`001_initial_schema.py`) and verify upgrade/downgrade/re-upgrade on PostgreSQL.
+- [x] Implement explicit idempotent baseline role seeder (`backend/app/core/seed.py`).
+- [x] Verify async connectivity, model defaults/constraints/cascades, schema drift, readiness, test DB isolation, and all Phase 1 regressions.
 
 ---
 
 ## 🔐 Phase 3: Authentication & Role-Based Authorization (RBAC)
+- [ ] Add secure initial superadmin provisioning to the Phase 2 seed command using Argon2id and configured credentials; never reset an existing admin password.
 - [ ] Implement `backend/app/core/security.py` (Argon2id password hashing and JWT encoding/decoding).
 - [ ] Create Pydantic v2 auth and user schemas (`backend/app/schemas/auth.py`, `backend/app/schemas/user.py`).
 - [ ] Implement `backend/app/services/auth_service.py` (login, register, token rotation, revocation).

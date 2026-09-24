@@ -20,8 +20,9 @@ class RefreshToken(UUIDPrimaryKey, CreatedAt, Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     is_revoked: Mapped[bool] = mapped_column(nullable=False, server_default=text("false"))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    user: Mapped["User"] = relationship(back_populates="refresh_tokens")
+    user: Mapped["User"] = relationship(back_populates="refresh_tokens", lazy="raise")
 
 
 from app.models.user import User  # noqa: E402

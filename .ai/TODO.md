@@ -44,6 +44,15 @@
 - [x] Implement explicit idempotent baseline role seeder (`backend/app/core/seed.py`).
 - [x] Verify async connectivity, model defaults/constraints/cascades, schema drift, readiness, test DB isolation, and all Phase 1 regressions.
 
+## 🔧 Pre-Phase-3 Foundation Hardening
+- [x] Independently verify every §3 finding in `.ai/REVIEW_CLAUDE.md` against code and the dedicated test database.
+- [x] Fix ORM user deletion with loaded role assignments and refresh tokens; add `session.delete()`/commit regression coverage.
+- [x] Add Alembic `002_pre_auth_hardening` for unique `lower(email)`, restricted role deletion, and nullable token `revoked_at`.
+- [x] Hide bound SQL parameters and sanitize database exception logs, including PostgreSQL constraint details.
+- [x] Change the migration test to exercise `base → head → base → head` and run Alembic drift check.
+- [x] Apply staging security guards and explicit async relationship loading; test each behavior.
+- [x] Record Phase 3 authorization and refresh-token decisions in ADR 009 and `docs/AUTH_STRATEGY.md`.
+
 ---
 
 ## 🔐 Phase 3: Authentication & Role-Based Authorization (RBAC)
@@ -52,7 +61,11 @@
 - [ ] Create Pydantic v2 auth and user schemas (`backend/app/schemas/auth.py`, `backend/app/schemas/user.py`).
 - [ ] Implement `backend/app/services/auth_service.py` (login, register, token rotation, revocation).
 - [ ] Implement `backend/app/services/user_service.py` (profile retrieval, user updates).
-- [ ] Implement FastAPI dependencies (`backend/app/api/deps.py`: `get_db`, `get_current_user`, `require_role`).
+- [ ] Implement FastAPI authentication dependencies (`backend/app/api/deps.py`: import existing `get_db` from `app.core.database`; add `get_current_user`, `get_current_active_user`, `require_role`).
+- [ ] Load current `is_active` and role membership from PostgreSQL on protected requests; use atomic refresh rotation and known-reuse handling from ADR 009.
+- [ ] Make registration fail clearly if baseline `user` role is absent; ensure seed command runs in auth integration tests and deployment bootstrap.
+- [ ] Revisit the permanent `INITIAL_ADMIN_PASSWORD` startup requirement during secure administrator bootstrap.
+- [ ] Configure trusted proxy handling before relying on client IP for auth rate limits and audit events.
 - [ ] Implement API endpoints (`/api/v1/auth/register`, `/login`, `/refresh`, `/logout`).
 - [ ] Implement `/api/v1/users/me` profile endpoints.
 - [ ] Write pytest integration suite verifying auth, token rotation, and RBAC guards.
@@ -78,6 +91,7 @@
 - [ ] Build admin dashboard overview with KPI metric cards.
 - [ ] Build user management data table (search, pagination, role change, status toggle).
 - [ ] Build audit log timeline viewer.
+- [ ] Add `user_roles.role_id` index if role-filtered user queries need it; preserve audit attribution when designing any hard-delete flow.
 
 ---
 
@@ -85,6 +99,7 @@
 - [ ] Finalize backend pytest suite covering edge cases and security boundaries.
 - [ ] Implement Vitest component tests for language switching and form inputs.
 - [ ] Set up test coverage reporting.
+- [ ] Consider opt-in integration markers, explicit `python-dotenv` test dependency, and coverage of `get_db` exception cleanup, CORS preflight, and security headers.
 
 ---
 
@@ -94,6 +109,9 @@
 - [ ] Configure GitHub Actions workflow `backend-ci.yml`.
 - [ ] Configure GitHub Actions workflow `frontend-ci.yml`.
 - [ ] Create `docker-compose.prod.yml`.
+- [ ] Revisit Supabase transaction-pooler compatibility, configurable pool limits, production docs visibility, readiness timeout, and container `.env` path before deployment.
+- [ ] Add `backend/.dockerignore` if using `backend/` as Docker build context; decide whether public repository personal context and local paths should remain.
+- [ ] Decide whether a separate audit-log database role or metadata naming convention is needed when schema/deployment complexity justifies it.
 
 ---
 

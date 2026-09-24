@@ -38,26 +38,26 @@ Given Abdullah's engineering background in **Defensive Cybersecurity and SOC Ope
 
 ## 3. HTTP Security Headers Middleware
 
-FastAPI automatically injects production-grade HTTP response headers on every route via custom Starlette middleware (`app/core/security.py`):
+The HTTP middleware in `backend/app/main.py` adds these headers to responses:
 
 ```python
 # Security Headers enforced on all responses
 HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
-    "X-XSS-Protection": "1; mode=block",
-    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
-    "Content-Security-Policy": "default-src 'self'; img-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline';",
+    "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "geolocation=(), microphone=(), camera=()"
 }
 ```
 
+Interactive documentation has a separate CSP allowing its required assets. `Strict-Transport-Security: max-age=31536000; includeSubDomains` is added only in production. No obsolete `X-XSS-Protection` header is emitted.
+
 ---
 
 ## 4. Input Sanitization & Data Normalization
 
-1. **Email Normalization:** All emails are lowercased and stripped of leading/trailing whitespace via Pydantic field validators before reaching database queries:
+1. **Email Normalization:** Phase 3 request schemas must lowercase and strip emails before database queries. The current database already rejects case-variant duplicates through a unique index on `lower(email)`:
    ```python
    @field_validator("email")
    @classmethod
@@ -73,5 +73,6 @@ HEADERS = {
 ## 5. Secret Management & Anti-Leak Safeguards
 
 - **Never Commit Secrets:** `.env` is explicitly declared in `.gitignore`.
-- **Pre-Flight Startup Guard:** When `ENVIRONMENT=production`, FastAPI inspects `SECRET_KEY` on startup. If the key matches default test strings (e.g., `change-me-in-production`), the application terminates immediately with a critical alert.
+- **Pre-Flight Startup Guard:** Every non-development environment (`staging` and `production`) requires a 64-character hexadecimal `SECRET_KEY`, `DEBUG=false`, secure cookies, HTTPS CORS origins, and a non-sample initial administrator password. Phase 3 will use that password only for secure initial provisioning.
+- **Database Errors:** SQLAlchemy hides bound parameters; centralized handling logs the database error class without PostgreSQL exception details because constraint errors can include token hashes. API responses remain generic.
 - **Sanitized Response Models:** Database entities (`User`) are never returned directly to API clients. Only explicit Pydantic schemas (`UserResponse`) are returned, guaranteeing that `hashed_password` and internal salts are physically excluded from the serialization payload.

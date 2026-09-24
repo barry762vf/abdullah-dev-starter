@@ -46,7 +46,7 @@ flowchart TD
 | Category | Test Path | Primary Invariants Verified |
 | :--- | :--- | :--- |
 | **Security & Crypto** | `tests/unit/test_security.py` | - Argon2id hashing and verification work reliably.<br>- Password hash changes upon password update.<br>- JWT creation embeds expiration and subject.<br>- Expired or tampered JWT fails decoding. |
-| **Authentication Flow** | `tests/api/test_auth.py` | - Successful registration creates user and sends clean JSON (no password).<br>- Login with correct credentials returns 200 and sets cookies.<br>- Login with invalid password returns 401.<br>- Refresh endpoint rotates token and invalidates old token.<br>- Tampered refresh token revokes all user sessions. |
+| **Authentication Flow** | `tests/api/test_auth.py` (Phase 3) | - Successful registration creates user and sends clean JSON (no password).<br>- Login with correct credentials returns 200 and sets cookies.<br>- Login with invalid password returns 401.<br>- Refresh atomically rotates a valid token.<br>- Reuse of a known revoked token revokes that user's sessions; unknown/tampered tokens receive 401 without user-wide revocation. |
 | **RBAC Authorization** | `tests/api/test_admin.py` | - Standard user hitting `/api/v1/admin/users` gets `403 Forbidden`.<br>- Unauthenticated user hitting protected routes gets `401 Unauthorized`.<br>- Admin hitting `/api/v1/admin/users` receives paginated user list. |
 | **Database Migrations** | `tests/integration/test_database.py` | - Alembic upgrade, downgrade and re-upgrade execute on the dedicated test DB.<br>- Metadata drift check, async ping, defaults, constraints, cascades, and seed idempotency pass. |
 

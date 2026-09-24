@@ -27,7 +27,7 @@ class AuditLog(UUIDPrimaryKey, CreatedAt, Base):
     user_agent: Mapped[str | None] = mapped_column(String(512))
     details: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
 
-    user: Mapped["User | None"] = relationship(back_populates="audit_logs")
+    user: Mapped["User | None"] = relationship(back_populates="audit_logs", lazy="raise")
 
 
 from app.models.user import User  # noqa: E402

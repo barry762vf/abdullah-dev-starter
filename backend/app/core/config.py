@@ -72,23 +72,25 @@ class Settings(BaseSettings):
         return ",".join(dict.fromkeys(origins))
 
     @model_validator(mode="after")
-    def validate_production_security(self) -> "Settings":
-        if self.environment != "production":
+    def validate_non_development_security(self) -> "Settings":
+        if self.environment == "development":
             return self
         key = self.secret_key.get_secret_value()
         if len(key) < 64 or any(char not in "0123456789abcdefABCDEF" for char in key):
             raise ValueError(
-                "Production SECRET_KEY must contain at least 64 hexadecimal characters"
+                "Staging/production SECRET_KEY must contain at least 64 hexadecimal characters"
             )
         if self.debug:
-            raise ValueError("DEBUG must be false in production")
+            raise ValueError("DEBUG must be false in staging/production")
         if not self.cookie_secure:
-            raise ValueError("COOKIE_SECURE must be true in production")
+            raise ValueError("COOKIE_SECURE must be true in staging/production")
         if any(not origin.startswith("https://") for origin in self.allowed_origins):
-            raise ValueError("Production CORS_ORIGINS must use HTTPS")
+            raise ValueError("Staging/production CORS_ORIGINS must use HTTPS")
         admin_password = self.initial_admin_password.get_secret_value()
         if len(admin_password) < 12 or admin_password == "Admin123!Secure":
-            raise ValueError("Set a strong, non-sample INITIAL_ADMIN_PASSWORD in production")
+            raise ValueError(
+                "Set a strong, non-sample INITIAL_ADMIN_PASSWORD in staging/production"
+            )
         return self
 
     @property

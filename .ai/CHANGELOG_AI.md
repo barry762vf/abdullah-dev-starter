@@ -10,6 +10,16 @@ This file tracks every AI agent session, modified files, verification performed,
 
 ## 📋 Session Log
 
+### 🔹 2026-09-24: Independent review verification and pre-Phase-3 hardening
+- **Agent Role / ID:** Codex (Primary Implementation Engineer)
+- **Primary Goal:** Independently verify `.ai/REVIEW_CLAUDE.md` and close confirmed Phase 0–2 issues before authentication, without starting Phase 3.
+- **Review Handling:** Preserved the incoming untracked root review report at its requested `.ai/REVIEW_CLAUDE.md` location and appended a separate verification/resolution section. Live rollback-only probes reproduced loaded ORM deletion failures, case-variant emails, password hash exception leakage, and PostgreSQL token hash leakage despite `hide_parameters`.
+- **Files Added:** Alembic `002_pre_auth_hardening.py`, database-error logging regression test, and relocated review report.
+- **Files Changed:** User/Role/RefreshToken/AuditLog mappings, database engine, Alembic environment, centralized error logging, staging config validator, migration/integration/config tests, relevant database/auth/security/testing/deployment docs, ADR 009, and `.ai/` handoff/state.
+- **Implementation:** ORM delete-orphan cascades for loaded User children, unique `lower(email)`, `ON DELETE RESTRICT` for assigned roles, nullable `revoked_at`, `lazy="raise"` relationships, hidden SQL bound parameters, sanitized database logs, staging security guards, and full-base migration round-trip testing. Phase 3 decisions specify current DB authorization checks, atomic refresh rotation, known-token reuse handling, and opaque token generation; no auth endpoint or dependency was added.
+- **Verification:** Dedicated Docker PostgreSQL test database only; explicit `alembic upgrade head`, `downgrade base`, `upgrade head`, `check`, and `current` passed at `002_pre_auth_hardening`; full `pytest -q` passed 30 tests; Ruff check/format and `pip check` passed. No normal development schema was changed.
+- **Next Task:** Begin Phase 3 authentication and RBAC only in a new task/run, following ADR 009 and the updated auth strategy.
+
 ### 🔹 2026-09-24: Phase 2 database foundation
 - **Agent Role / ID:** Codex (Primary Implementation Engineer)
 - **Primary Goal:** Implement only Phase 2 against Docker PostgreSQL with a separate test database.

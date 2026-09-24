@@ -32,7 +32,7 @@ erDiagram
 
     USERS {
         uuid id PK "default gen_random_uuid()"
-        varchar email UK "Indexed, max 255"
+        varchar email UK "Unique lower(email) index, max 255"
         varchar hashed_password "Argon2id / Bcrypt hash"
         varchar full_name "Full name in Arabic/English"
         varchar phone_number "Nullable, E.164 format"
@@ -45,7 +45,7 @@ erDiagram
 
     ROLES {
         uuid id PK "default gen_random_uuid()"
-        varchar name UK "admin, manager, user, guest"
+        varchar name UK "Seeded: superadmin, admin, user"
         varchar description "Role explanation"
         jsonb permissions "Array of permission slugs"
         timestamp created_at "WITH TIME ZONE"
@@ -63,6 +63,7 @@ erDiagram
         varchar token_hash UK "SHA-256 hash of token"
         timestamp expires_at "WITH TIME ZONE"
         boolean is_revoked "Default false"
+        timestamp revoked_at "Nullable, WITH TIME ZONE"
         timestamp created_at "WITH TIME ZONE"
     }
 
@@ -78,24 +79,21 @@ erDiagram
         timestamp created_at "WITH TIME ZONE"
     }
 
-    SYSTEM_SETTINGS {
-        varchar key PK "e.g., app.registration_enabled, ai.model_default"
-        jsonb value "Typed config value"
-        varchar description "Setting documentation"
-        timestamp updated_at "WITH TIME ZONE"
-    }
 ```
+
+`SYSTEM_SETTINGS` is a possible future extension, not a Phase 2 table. The current schema contains only the five entities above. Deleting a user cascades role assignments and refresh tokens while retaining audit events with a nullable actor. Deleting a role with assignments is restricted.
 
 ---
 
 ## 3. Indexing & Optimization Strategy
 
 1. **Unique & Lookup Indexes:**
-   - `users(email)`: Unique B-tree index for instant O(1) login lookups.
-   - `roles(name)`: Unique B-tree index (`admin`, `manager`, `user`).
-   - `refresh_tokens(token_hash)`: Unique B-tree index for O(1) token verification and rotation.
+   - `users(lower(email))`: Unique B-tree expression index, preventing case-variant duplicate accounts. Phase 3 must also normalize email input before lookup or insert. Migration `002_pre_auth_hardening` fails with a clear error if existing case-variant duplicates must be resolved first.
+   - `roles(name)`: Unique B-tree index (`superadmin`, `admin`, `user` are seeded).
+   - `refresh_tokens(token_hash)`: Unique B-tree index for token verification and rotation.
 2. **Foreign Key Indexes:**
    - `user_roles(user_id, role_id)`: Composite primary key ensuring no duplicate role assignments and fast join queries.
+   - `user_roles.role_id` references `roles.id` with `ON DELETE RESTRICT`; role deletion must be explicit after assignments are removed.
    - `refresh_tokens(user_id)`: Index for mass revocation on password reset or account deactivation.
    - `audit_logs(user_id, created_at)`: Composite index for fast timeline queries filtered by user.
 3. **Audit Log Partitioning & Truncation:**
@@ -125,6 +123,8 @@ All schema alterations are strictly managed through **Alembic**. Direct manual S
    ```powershell
    .venv/Scripts/python.exe -m alembic upgrade head
    ```
+
+The first two revisions are `001_initial_schema` and `002_pre_auth_hardening`. The latter adds the case-insensitive email invariant, token `revoked_at`, and restricted role deletion. New migrations must be additive revisions; do not edit committed history.
 
 ---
 

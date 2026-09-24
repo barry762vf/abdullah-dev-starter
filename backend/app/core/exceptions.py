@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 logger = logging.getLogger("abdullah_core")
@@ -50,7 +51,12 @@ def problem_response(
 
 
 async def handle_unexpected_error(request: Request, error: Exception) -> JSONResponse:
-    logger.exception("unhandled_request_error", exc_info=error)
+    if isinstance(error, SQLAlchemyError):
+        # PostgreSQL DETAIL may contain a conflicting token hash even when
+        # SQLAlchemy hides bound parameters. Never log the DB exception text.
+        logger.error("unhandled_database_error", extra={"error_type": type(error).__name__})
+    else:
+        logger.exception("unhandled_request_error", exc_info=error)
     return problem_response(
         request,
         status_code=500,

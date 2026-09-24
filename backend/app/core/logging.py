@@ -19,7 +19,7 @@ class JsonFormatter(logging.Formatter):
         request_id = request_id_context.get()
         if request_id:
             event["request_id"] = request_id
-        for field in ("method", "path", "status_code", "duration_ms", "client_ip"):
+        for field in ("method", "path", "status_code", "duration_ms", "client_ip", "error_type"):
             if hasattr(record, field):
                 event[field] = getattr(record, field)
         if record.exc_info:

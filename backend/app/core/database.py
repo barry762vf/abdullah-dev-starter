@@ -21,6 +21,7 @@ def create_engine(settings: Settings) -> AsyncEngine:
         pool_timeout=30,
         pool_recycle=1800,
         pool_pre_ping=True,
+        hide_parameters=True,
         connect_args={"timeout": 5},
     )
 

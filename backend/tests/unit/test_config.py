@@ -85,3 +85,38 @@ def test_production_rejects_http_origin() -> None:
             environment="production",
             cookie_secure=True,
         )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("secret_key", "sample-secret", "SECRET_KEY"),
+        ("debug", True, "DEBUG"),
+        ("cookie_secure", False, "COOKIE_SECURE"),
+        ("cors_origins", "http://example.com", "HTTPS"),
+        ("initial_admin_password", "Admin123!Secure", "INITIAL_ADMIN_PASSWORD"),
+    ],
+)
+def test_staging_rejects_each_insecure_setting(field: str, value: object, message: str) -> None:
+    secure = BASE | {
+        "secret_key": "a" * 64,
+        "cors_origins": "https://example.com",
+        "debug": False,
+        "cookie_secure": True,
+        "initial_admin_password": "a-unique-development-test-value",
+        "environment": "staging",
+    }
+    with pytest.raises(ValidationError, match=message):
+        Settings(_env_file=None, **(secure | {field: value}))
+
+
+def test_staging_accepts_strong_configuration() -> None:
+    settings = Settings(
+        _env_file=None,
+        **(BASE | {"secret_key": "a" * 64, "cors_origins": "https://example.com"}),
+        environment="staging",
+        debug=False,
+        cookie_secure=True,
+        initial_admin_password="a-unique-development-test-value",
+    )
+    assert settings.environment == "staging"

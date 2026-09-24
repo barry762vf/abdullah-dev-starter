@@ -83,7 +83,7 @@ flowchart LR
   5. Generate initial migration revision (`001_initial_schema.py`) and apply to PostgreSQL.
 - **Completion Criteria:**
   - Alembic `upgrade head` successfully creates all tables and indexes in PostgreSQL.
-  - Alembic `downgrade -1` cleanly drops all tables without orphaned constraints.
+  - Alembic `downgrade base` cleanly drops all tables without orphaned constraints, even after later revisions are added.
 - **Tests Required:**
   - Migration round-trip integration test.
   - Database connectivity test verifying ping via async session.

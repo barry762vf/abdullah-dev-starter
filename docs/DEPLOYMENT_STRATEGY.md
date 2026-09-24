@@ -92,16 +92,16 @@ The repository provides two separate, highly optimized GitHub Actions workflows:
 
 ## 5. Zero-Downtime Deployment & Health Monitoring
 
-- **Health Endpoint (`/api/v1/health`):**
-  Returns JSON status after the Phase 2 database layer is integrated. During Phase 1, it explicitly returns `database: "not_configured"` and does not claim to check database connectivity:
+- **Liveness Endpoint (`/api/v1/health`):**
+  Returns application status without querying PostgreSQL:
   ```json
   {
     "status": "healthy",
-    "version": "1.0.0",
-    "database": "connected",
-    "uptime_seconds": 34821
+    "environment": "production",
+    "database": "not_checked",
+    "uptime_seconds": 34821.0
   }
   ```
 - **Deployment Rollouts:**
-  - Railway and Cloudflare Pages both execute zero-downtime rolling deploys. The old container continues serving traffic until the new container passes the `/api/v1/health` probe.
-  - If database migrations fail during startup, the container fails to become healthy and traffic remains safely pinned to the previous release.
+  - `/api/v1/ready` performs a database ping and returns 503 when PostgreSQL is unavailable; configure dependency-aware deployment probes to use it.
+  - Migrations are an explicit deployment step. The current application does not run them automatically at startup.

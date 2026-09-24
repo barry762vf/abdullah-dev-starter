@@ -59,8 +59,8 @@ This file contains permanent records of all major technical and architectural de
 - **Decision:** Use **Short-Lived Access Tokens (15 min) + Rotating Refresh Tokens (14 days)** stored in **HTTP-Only, Secure, SameSite=Lax Cookies**.
 - **Rationale:**
   - Eliminates Cross-Site Scripting (XSS) token theft because JavaScript cannot read HTTP-only cookies.
-  - Access tokens are cryptographically verified in memory without database hits.
-  - Refresh tokens are hashed (SHA-256) in the database with rotation on every use; token reuse detection immediately revokes compromised sessions.
+  - Access-token signatures are verified in memory; ADR 009 adds a database lookup for current account and role state on protected requests.
+  - Refresh tokens are hashed (SHA-256) in the database with rotation on every use; known revoked-token reuse revokes that user's sessions under ADR 009.
   - Also supports `Authorization: Bearer` headers as a fallback for external mobile clients and webhooks.
 - **Rejected Alternative:** Storing access tokens in browser `localStorage` (Vulnerable to credential harvesting via malicious third-party scripts or XSS).
 
@@ -109,3 +109,14 @@ This file contains permanent records of all major technical and architectural de
 - **Context:** The database strategy describes both baseline roles and an initial superadmin. The roadmap places Argon2id password hashing and authentication behavior in Phase 3. Creating a superadmin in Phase 2 without that mechanism would risk an insecure account.
 - **Decision:** Phase 2 provides an explicit, idempotent role seed command only. It never creates a user or changes existing role grants. Phase 3 must implement initial superadmin provisioning with Argon2id and the configured `INITIAL_ADMIN_EMAIL`/`INITIAL_ADMIN_PASSWORD` after migration.
 - **Consequences:** Fresh Phase 2 installations contain role definitions but no admin login. Database integration tests use a separately named `_test` PostgreSQL database and refuse the normal development URL; migration round-trips may recreate schema only there.
+
+---
+
+## ADR 009: Pre-authentication data integrity and immediate authorization state
+
+- **Date:** 2026-09-24
+- **Status:** Accepted; amends the no-database-lookup and broad reuse wording in ADR 004.
+- **Context:** Independent review found loaded ORM relationships breaking user deletion, case-sensitive email uniqueness, SQL error details containing hashes, and ambiguity about refresh replay and account disabling.
+- **Decision:** Migration `002_pre_auth_hardening` enforces unique `lower(email)`, restricts deletion of assigned roles, and adds nullable `refresh_tokens.revoked_at`. ORM user deletion cascades loaded role assignments and tokens. Protected Phase 3 requests must load current user and roles from PostgreSQL after JWT verification. Refresh rotation must atomically revoke a valid digest and insert its successor in one transaction. Only a known revoked token can identify a user for mass revocation; unknown/tampered or merely expired tokens cannot. Raw refresh tokens will use `secrets.token_urlsafe(32)` and only SHA-256 digests will be stored.
+- **Security and operational consequences:** Disabling an account or removing a role takes effect on the next protected request at the cost of an indexed lookup plus role loading. No token-reuse grace window is accepted in the baseline; concurrent refreshes may force re-login. `revoked_at` supports investigation without implying acceptance of replay. SQLAlchemy hides bound parameters and database exceptions are logged by class, because PostgreSQL constraint details can contain a token hash. Staging receives the same key/debug/cookie/CORS/admin-password guards as production.
+- **Optional review items:** Adopted restricted role deletion and `lazy="raise"` on async relationships. Deferred a metadata naming convention because already-committed migration `001` uses PostgreSQL-generated names and renaming existing constraints adds migration churn without fixing a current behavior. Database pool tuning, proxy handling, and production deployment work remain later-phase tasks.
